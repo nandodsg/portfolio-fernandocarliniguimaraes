@@ -18,3 +18,7 @@ ficar aberto, e um workflow publica o resultado neste repositório. A fonte vive
 ## Licença
 
 O código deste repositório está sob [MIT](LICENSE). Textos, fotos e demais conteúdo do site: todos os direitos reservados.
+
+Arquivos de terceiros em `assets/`, **com licença própria, fora da MIT do código**: as fontes Archivo e JetBrains Mono
+(`assets/fonts/`, SIL Open Font License) e o GSAP com o ScrollTrigger (`assets/gsap.min.js`,
+`assets/ScrollTrigger.min.js`, [licença da GSAP](https://gsap.com/standard-license), gratuita).
