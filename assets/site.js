@@ -182,11 +182,11 @@
     new IntersectionObserver(function (es) {
       L.on = es[0].isIntersecting;
       if (L.on && !seen && es[0].intersectionRatio > 0.45 && !RM && G) {
-        seen = true; L.intro = { x: 0.24, y: 0.1, r: 0 };
+        seen = true; L.intro = { x: 0.4, y: 0.08, r: 0 }; /* cabeça → olho → peito da foto escolhida (marcas 01–03) */
         G.timeline({ delay: 0.2, onComplete: function () { L.intro = null; } })
           .to(L.intro, { r: 0.85, duration: 0.45, ease: 'power2.out' })
-          .to(L.intro, { x: 0.6, y: 0.4, duration: 1.1, ease: 'power2.inOut' }, '<')
-          .to(L.intro, { x: 0.46, y: 0.86, duration: 0.9, ease: 'power2.inOut' })
+          .to(L.intro, { x: 0.52, y: 0.32, duration: 1.1, ease: 'power2.inOut' }, '<')
+          .to(L.intro, { x: 0.62, y: 0.74, duration: 0.9, ease: 'power2.inOut' })
           .to(L.intro, { r: 0, duration: 0.35, ease: 'power2.in' });
       }
     }, { threshold: [0, 0.5] }).observe(fig);
