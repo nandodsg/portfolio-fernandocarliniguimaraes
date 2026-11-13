@@ -231,6 +231,27 @@ html.xray .laudo{background:rgba(236,231,220,.9)}
 .mach .msg{fill:var(--bone2)}
 .mach .roll{fill:var(--plate);stroke:var(--bone2);stroke-width:1.2}
 
+/* ---------- celular: a máquina com câmera por etapa (amostra aprovada em direcoes/projetos-maquinas-celular.html) ---------- */
+.mpin{display:none}
+.mach.mach-m{display:none}
+.js-mach .proj.has-m .pecas,.js-mach .proj.has-m .pecas-t{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.js-mach .mpin{display:flex;flex-direction:column;height:100vh;height:100svh;min-height:560px;padding:84px 0 18px;margin:8px 0 26px;background:var(--bg);overflow:hidden}
+.js-mach .mach.mach-m{display:block;flex:none;position:relative;width:min(100%,max(240px,calc(100vh - 300px)));width:min(100%,max(240px,calc(100svh - 300px)));aspect-ratio:1/1;margin:0 auto;overflow:hidden;
+  border:1px solid var(--line2);background-color:var(--bg);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:34px 34px}
+.mach.mach-m>svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:hidden}
+/* a câmera chega perto: o texto das máquinas sobe um pouco pra ficar legível */
+.mach-m .lbl{font-size:11.5px}
+.mach-m .lbl.sm{font-size:9.5px}
+.mach-m .lbl.big{font-size:15px}
+.mach-m .rec{font-size:11px}
+.capc{margin-top:18px;min-height:128px}
+.capc .n{font:400 12px/1 var(--mono);letter-spacing:.1em;color:var(--mut)}
+.capc .n b{color:var(--red);font-weight:400;font-size:26px;letter-spacing:0;margin-right:6px;vertical-align:-3px}
+.capc strong{display:block;font-size:22px;line-height:1.12;font-weight:800;font-variation-settings:"wdth" 108;text-transform:uppercase;margin:12px 0 8px;min-height:2.24em}
+.capc em{display:block;font:400 13px/1.5 var(--mono);font-style:normal;color:var(--bone2);min-height:3em}
+.js-mach .mpin .pstrip{display:flex;gap:5px;margin-top:auto}
+.js-mach .mpin .pstrip button{padding-top:8px;font-size:9px;letter-spacing:.06em}
+
 .stack{position:absolute;left:33%;top:50%;width:0;height:0;transform-style:preserve-3d}
 .spin{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d}
 .plate{position:absolute;width:var(--ps);height:var(--ps);left:calc(var(--ps) / -2);top:calc(var(--ps) / -2);transform-style:preserve-3d;

@@ -673,6 +673,61 @@
       if (p < 1) el._raf = requestAnimationFrame(f);
     })(t0);
   }
+  /* ---------------- celular: as mesmas máquinas, com câmera (amostra aprovada: planos/2026-11-13-portfolio/direcoes/projetos-maquinas-celular.html) ---------------- */
+  /* [centro x, centro y, largura] em unidades do desenho; a altura sai da proporção da caixa (1:1). 1 ou 2 quadros por etapa: o 2º é pra onde a câmera desliza durante a etapa. */
+  var CAMF = {"so": [[[140, 160, 300], [290, 160, 300]], [[20, 150, 300], [560, 150, 300]], [[250, 150, 380], [420, 150, 380]], [[260, 215, 380], [560, 215, 380]], [[172, 375, 340], [490, 385, 420]]], "mz": [[[210, 230, 380], [500, 240, 380]], [[210, 310, 380], [270, 310, 380]], [[440, 320, 480]], [[450, 320, 470]], [[290, 330, 380], [600, 330, 380]]], "crm": [[[160, 170, 360], [290, 170, 360]], [[330, 165, 340]], [[400, 150, 360], [500, 150, 440]], [[520, 360, 400]], [[500, 450, 420]]]};
+  var machM = [];
+  function mCap(m, k) {
+    var li = $$('.pecas li', m.p)[k];
+    $('.n', m.cap).innerHTML = '<b>' + pad2(k + 1) + '</b>/ 05';
+    decodeTo($('strong', m.cap), $('b', li).textContent, 380); decodeTo($('em', m.cap), $('span', li).textContent, 600);
+  }
+  function initMachM(p, key, build) {
+    var anchor = $('.acts', p) || $('.p-note', p), strip = $('.pstrip', p);
+    if (!anchor || !strip) return;
+    p.classList.add('has-m');
+    var pin = D.createElement('div'); pin.className = 'mpin';
+    pin.innerHTML = '<div class="mach mach-m" aria-hidden="true"><svg viewBox="0 60 720 466"></svg></div><div class="capc" aria-hidden="true"><div class="n"></div><strong></strong><em></em></div>';
+    p.insertBefore(pin, anchor); pin.appendChild(strip);
+    var box = $('.mach-m', pin), svg = $('svg', box), cap = $('.capc', pin), cam = { cx: 0, cy: 0, w: 1 }, frames = CAMF[key];
+    function rv() {
+      var bw = box.clientWidth || 1, h = cam.w, k = bw / cam.w;
+      svg.setAttribute('viewBox', (cam.cx - cam.w / 2).toFixed(1) + ' ' + (cam.cy - h / 2).toFixed(1) + ' ' + cam.w.toFixed(1) + ' ' + h.toFixed(1));
+      box.style.backgroundSize = (34 * k * 0.5).toFixed(1) + 'px ' + (34 * k * 0.5).toFixed(1) + 'px'; /* a grade anda com a câmera: é do desenho, não da tela */
+      box.style.backgroundPosition = (-(cam.cx - cam.w / 2) * k).toFixed(1) + 'px ' + (-(cam.cy - h / 2) * k).toFixed(1) + 'px';
+    }
+    function F(a) { return { cx: a[0], cy: a[1], w: a[2] }; }
+    cam.cx = frames[0][0][0]; cam.cy = frames[0][0][1]; cam.w = frames[0][0][2]; rv();
+    var m = build(svg), T = m.tl.duration(), M = m.M.slice();
+    frames.forEach(function (fk, i) {
+      var a = M[i], z = i < M.length - 1 ? M[i + 1] : T;
+      if (i > 0) m.tl.to(cam, Object.assign(F(fk[0]), { duration: 0.8, ease: 'power2.inOut', onUpdate: rv }), a);
+      if (fk[1]) m.tl.to(cam, Object.assign(F(fk[1]), { duration: Math.max(0.6, z - a - (i ? 1.2 : 0.7)), ease: 'sine.inOut', onUpdate: rv }), a + (i ? 1.0 : 0.4));
+    });
+    T = m.tl.duration();
+    var sc = MD / T; m.tl.duration(MD);
+    var ph = M.map(function (x) { return x * sc; }), mm = { p: p, cap: cap, cur: -1, rv: rv };
+    var st = mm.st = ST.create({
+      animation: m.tl, trigger: pin, start: 'top top', pin: true, scrub: 0.6, anticipatePin: 1,
+      end: function () { return '+=' + Math.round(innerHeight * MD / 3.6); },
+      onUpdate: function (s) {
+        var t = s.progress * MD, k = 0; for (var j = 0; j < 5; j++) if (t >= ph[j] - 1e-3) k = j;
+        if (k !== mm.cur) { mm.cur = k; mCap(mm, k); if (m.onPhase) m.onPhase(k); }
+        $$('button', strip).forEach(function (b, j) {
+          var a = ph[j], z = j < 4 ? ph[j + 1] : MD;
+          b.style.setProperty('--p', Math.max(0, Math.min(1, (t - a) / (z - a))).toFixed(3)); b.classList.toggle('on', j === k);
+        });
+      }
+    });
+    mm.cur = 0; mCap(mm, 0); var b0 = $$('button', strip)[0]; if (b0) b0.classList.add('on');
+    strip.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var j = $$('button', strip).indexOf(b);
+      scrollTo({ top: st.start + (st.end - st.start) * ((ph[j] + 0.05) / MD) + 2, behavior: 'smooth' });
+    });
+    addEventListener('resize', rv);
+    machM.push(mm);
+  }
   function initMotor() {
     if (DESK && G) {
       var stage = $('.stage', motor), xv = $('.xv', motor), stack = $('.stack', motor), spin = $('.spin', motor), plates = $$('.plate', motor), sig = $('.sig', motor);
@@ -776,8 +831,12 @@
       });
       addEventListener('resize', render);
     } else if (G && !RM) {
-      /* celular e telas estreitas: a máquina não cabe legível; cada projeto traz a lista de peças e o fio acende uma peça de cada vez */
-      projs.forEach(function (p) {
+      /* celular e telas estreitas: os três projetos com máquina ganham a máquina com câmera por etapa, parada com pin enquanto se rola;
+         o Mercado (vista explodida em 3D) segue com a lista de peças, e o fio acende uma peça de cada vez */
+      H.classList.add('js-mach');
+      var KEYS = [null, 'so', 'mz', 'crm'], MBM = [null, MACH.so, MACH.mz, MACH.crm];
+      projs.forEach(function (p, k) {
+        if (k) { initMachM(p, KEYS[k], MBM[k]); return; }
         var lis = $$('.pecas li', p);
         G.from(lis, { opacity: 0, x: -14, duration: 0.5, stagger: 0.09, ease: 'power3.out', scrollTrigger: { trigger: $('.pecas', p), start: 'top 88%' } });
         ST.create({ trigger: $('.pecas', p), start: 'top 80%', once: true, onEnter: function () {
@@ -944,7 +1003,8 @@
     buildName(); chars.forEach(setC); splitHeads(); fitCallme(); buildLabels(); MACH.relabel();
     if (xr) { var fb = $('.rod [data-capo]'); if (fb) fb.textContent = T('f3x'); }
     drawRede();
-    if (G) { ST.refresh(); motorRender(); if (motorST) { motorMP.forEach(function (mp) { mp.cur = -1; }); motorST.update(); } }
+    if (G) { ST.refresh(); motorRender(); if (motorST) { motorMP.forEach(function (mp) { mp.cur = -1; }); motorST.update(); }
+      machM.forEach(function (mm) { mm.cur = -1; mm.rv(); mm.st.update(); }); }
   }
 
   /* ---------------- partida ---------------- */
