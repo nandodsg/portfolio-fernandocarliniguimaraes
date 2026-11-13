@@ -682,31 +682,21 @@
     $('.n', m.cap).innerHTML = '<b>' + pad2(k + 1) + '</b>/ 05';
     decodeTo($('strong', m.cap), $('b', li).textContent, 380); decodeTo($('em', m.cap), $('span', li).textContent, 600);
   }
-  function initMachM(p, key, build) {
+  /* a parte comum às quatro: caixa quadrada, legenda grande e tira, tudo numa seção parada com pin */
+  function mountM(p, boxInner, setup) {
     var anchor = $('.acts', p) || $('.p-note', p), strip = $('.pstrip', p);
-    if (!anchor || !strip) return;
+    if (!anchor) return;
+    if (!strip) {
+      strip = D.createElement('div'); strip.className = 'pstrip'; strip.setAttribute('role', 'group'); strip.setAttribute('data-i18n-aria', 'stripa');
+      strip.setAttribute('aria-label', T('stripa') || ''); p.insertBefore(strip, anchor); buildLabels();
+    }
     p.classList.add('has-m');
     var pin = D.createElement('div'); pin.className = 'mpin';
-    pin.innerHTML = '<div class="mach mach-m" aria-hidden="true"><svg viewBox="0 60 720 466"></svg></div><div class="capc" aria-hidden="true"><div class="n"></div><strong></strong><em></em></div>';
+    pin.innerHTML = '<div class="mach mach-m" aria-hidden="true">' + boxInner + '</div><div class="capc" aria-hidden="true"><div class="n"></div><strong></strong><em></em></div>';
     p.insertBefore(pin, anchor); pin.appendChild(strip);
-    var box = $('.mach-m', pin), svg = $('svg', box), cap = $('.capc', pin), cam = { cx: 0, cy: 0, w: 1 }, frames = CAMF[key];
-    function rv() {
-      var bw = box.clientWidth || 1, h = cam.w, k = bw / cam.w;
-      svg.setAttribute('viewBox', (cam.cx - cam.w / 2).toFixed(1) + ' ' + (cam.cy - h / 2).toFixed(1) + ' ' + cam.w.toFixed(1) + ' ' + h.toFixed(1));
-      box.style.backgroundSize = (34 * k * 0.5).toFixed(1) + 'px ' + (34 * k * 0.5).toFixed(1) + 'px'; /* a grade anda com a câmera: é do desenho, não da tela */
-      box.style.backgroundPosition = (-(cam.cx - cam.w / 2) * k).toFixed(1) + 'px ' + (-(cam.cy - h / 2) * k).toFixed(1) + 'px';
-    }
-    function F(a) { return { cx: a[0], cy: a[1], w: a[2] }; }
-    cam.cx = frames[0][0][0]; cam.cy = frames[0][0][1]; cam.w = frames[0][0][2]; rv();
-    var m = build(svg), T = m.tl.duration(), M = m.M.slice();
-    frames.forEach(function (fk, i) {
-      var a = M[i], z = i < M.length - 1 ? M[i + 1] : T;
-      if (i > 0) m.tl.to(cam, Object.assign(F(fk[0]), { duration: 0.8, ease: 'power2.inOut', onUpdate: rv }), a);
-      if (fk[1]) m.tl.to(cam, Object.assign(F(fk[1]), { duration: Math.max(0.6, z - a - (i ? 1.2 : 0.7)), ease: 'sine.inOut', onUpdate: rv }), a + (i ? 1.0 : 0.4));
-    });
-    T = m.tl.duration();
-    var sc = MD / T; m.tl.duration(MD);
-    var ph = M.map(function (x) { return x * sc; }), mm = { p: p, cap: cap, cur: -1, rv: rv };
+    var cap = $('.capc', pin), m = setup($('.mach-m', pin));
+    var sc = MD / m.T; m.tl.duration(MD);
+    var ph = m.M.map(function (x) { return x * sc; }), mm = { p: p, cap: cap, cur: -1, rv: m.rv };
     var st = mm.st = ST.create({
       animation: m.tl, trigger: pin, start: 'top top', pin: true, scrub: 0.6, anticipatePin: 1,
       end: function () { return '+=' + Math.round(innerHeight * MD / 3.6); },
@@ -719,14 +709,60 @@
         });
       }
     });
-    mm.cur = 0; mCap(mm, 0); var b0 = $$('button', strip)[0]; if (b0) b0.classList.add('on');
+    mm.cur = 0; mCap(mm, 0); if (m.onPhase) m.onPhase(0); var b0 = $$('button', strip)[0]; if (b0) b0.classList.add('on');
     strip.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
       var j = $$('button', strip).indexOf(b);
       scrollTo({ top: st.start + (st.end - st.start) * ((ph[j] + 0.05) / MD) + 2, behavior: 'smooth' });
     });
-    addEventListener('resize', rv);
+    addEventListener('resize', m.rv);
     machM.push(mm);
+  }
+  /* as três máquinas planas: o viewBox do SVG é a câmera */
+  function initMachM(p, key, build) {
+    mountM(p, '<svg viewBox="0 60 720 466"></svg>', function (box) {
+      var svg = $('svg', box), cam = { cx: 0, cy: 0, w: 1 }, frames = CAMF[key];
+      function rv() {
+        var bw = box.clientWidth || 1, h = cam.w, k = bw / cam.w;
+        svg.setAttribute('viewBox', (cam.cx - cam.w / 2).toFixed(1) + ' ' + (cam.cy - h / 2).toFixed(1) + ' ' + cam.w.toFixed(1) + ' ' + h.toFixed(1));
+        box.style.backgroundSize = (34 * k * 0.5).toFixed(1) + 'px ' + (34 * k * 0.5).toFixed(1) + 'px'; /* a grade anda com a câmera: é do desenho, não da tela */
+        box.style.backgroundPosition = (-(cam.cx - cam.w / 2) * k).toFixed(1) + 'px ' + (-(cam.cy - h / 2) * k).toFixed(1) + 'px';
+      }
+      function F(a) { return { cx: a[0], cy: a[1], w: a[2] }; }
+      cam.cx = frames[0][0][0]; cam.cy = frames[0][0][1]; cam.w = frames[0][0][2]; rv();
+      var m = build(svg), T0 = m.tl.duration(), M = m.M.slice();
+      frames.forEach(function (fk, i) {
+        var a = M[i], z = i < M.length - 1 ? M[i + 1] : T0;
+        if (i > 0) m.tl.to(cam, Object.assign(F(fk[0]), { duration: 0.8, ease: 'power2.inOut', onUpdate: rv }), a);
+        if (fk[1]) m.tl.to(cam, Object.assign(F(fk[1]), { duration: Math.max(0.6, z - a - (i ? 1.2 : 0.7)), ease: 'sine.inOut', onUpdate: rv }), a + (i ? 1.0 : 0.4));
+      });
+      return { tl: m.tl, M: M, T: m.tl.duration(), onPhase: m.onPhase, rv: rv };
+    });
+  }
+  /* o Mercado: as mesmas cinco placas e o mesmo sinal do desktop; a pilha é a câmera (sobe até a placa da vez, dá zoom, as outras escurecem) */
+  function initMercadoM(p) {
+    mountM(p, '<div class="xv"><div class="stack"><div class="spin">' +
+      [1, 2, 3, 4, 5].map(function (i) { return '<div class="plate p' + i + '"><i></i><span class="no">0' + i + '</span></div>'; }).join('') + '<div class="sig"></div></div></div></div>', function (box) {
+      var stack = $('.stack', box), spin = $('.spin', box), plates = $$('.plate', box), sig = $('.sig', box), st = { sep: 0, f: 0, sg: 0, zoom: 0 };
+      function render() {
+        var g = Math.min(60, box.clientHeight * 0.17), step = 4 + st.sep * (g - 4);
+        box.style.setProperty('--mps', Math.round(box.clientWidth * 0.45) + 'px');
+        plates.forEach(function (pl, i) { G.set(pl, { z: i * step }); });
+        G.set(stack, { y: st.f * step * 0.866, scale: 1 + 0.22 * st.zoom });
+        G.set(sig, { z: st.sg * step + 6, opacity: st.sep > 0.5 ? 1 : 0 });
+      }
+      G.set(stack, { rotationX: 0, scale: 0.9 }); render();
+      var tl = G.timeline({ defaults: { ease: 'power2.inOut' } }), M = [0];
+      tl.to(stack, { rotationX: 60, duration: 1.2 }).to(spin, { rotationZ: -45, duration: 1.2 }, '<')
+        .to(st, { sep: 1, duration: 1.3, onUpdate: render }, '<.3').to(st, { zoom: 1, duration: 1.2, onUpdate: render }, '<.2');
+      for (var k = 1; k < 5; k++) {
+        var t0 = tl.duration() + 0.55; M.push(t0);
+        tl.to(st, { f: k, sg: k, duration: 1.1, onUpdate: render }, t0);
+        if (k >= 2) tl.to(spin, { rotationZ: k === 2 ? -60 : k === 3 ? -30 : -45, duration: 1.4 }, t0 - 0.2);
+      }
+      tl.to({}, { duration: 1.2 });
+      return { tl: tl, M: M, T: tl.duration(), rv: render, onPhase: function (k) { plates.forEach(function (pl, i) { pl.classList.toggle('hot', i === k); pl.classList.toggle('dim', i !== k); }); } };
+    });
   }
   function initMotor() {
     if (DESK && G) {
@@ -831,20 +867,12 @@
       });
       addEventListener('resize', render);
     } else if (G && !RM) {
-      /* celular e telas estreitas: os três projetos com máquina ganham a máquina com câmera por etapa, parada com pin enquanto se rola;
-         o Mercado (vista explodida em 3D) segue com a lista de peças, e o fio acende uma peça de cada vez */
+      /* celular e telas estreitas: os quatro projetos ganham a seção parada com pin enquanto se rola: os três com máquina plana e câmera por etapa,
+         o Mercado com a vista explodida em 3D (a pilha é a câmera); legenda grande e tira de peças embaixo (amostras aprovadas em planos/2026-11-13-portfolio/direcoes/) */
       H.classList.add('js-mach');
       var KEYS = [null, 'so', 'mz', 'crm'], MBM = [null, MACH.so, MACH.mz, MACH.crm];
       projs.forEach(function (p, k) {
-        if (k) { initMachM(p, KEYS[k], MBM[k]); return; }
-        var lis = $$('.pecas li', p);
-        G.from(lis, { opacity: 0, x: -14, duration: 0.5, stagger: 0.09, ease: 'power3.out', scrollTrigger: { trigger: $('.pecas', p), start: 'top 88%' } });
-        ST.create({ trigger: $('.pecas', p), start: 'top 80%', once: true, onEnter: function () {
-          lis.forEach(function (li, i) {
-            setTimeout(function () { li.classList.add('hot'); }, 500 + i * 340);
-            setTimeout(function () { li.classList.remove('hot'); }, 500 + i * 340 + 560);
-          });
-        } });
+        if (k) initMachM(p, KEYS[k], MBM[k]); else initMercadoM(p);
       });
     }
   }

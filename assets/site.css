@@ -244,6 +244,11 @@ html.xray .laudo{background:rgba(236,231,220,.9)}
 .mach-m .lbl.sm{font-size:9.5px}
 .mach-m .lbl.big{font-size:15px}
 .mach-m .rec{font-size:11px}
+/* o Mercado no celular: a mesma vista explodida em 3D do computador, em caixa quadrada; a pilha é a câmera */
+.mach-m .xv{--ps:var(--mps,150px);perspective:1500px;perspective-origin:50% 50%}
+.mach-m .stack{left:50%}
+.mach-m .plate{transition:border-color .25s,box-shadow .25s,opacity .3s}
+.mach-m .plate.dim{opacity:.38}
 .capc{margin-top:18px;min-height:128px}
 .capc .n{font:400 12px/1 var(--mono);letter-spacing:.1em;color:var(--mut)}
 .capc .n b{color:var(--red);font-weight:400;font-size:26px;letter-spacing:0;margin-right:6px;vertical-align:-3px}
