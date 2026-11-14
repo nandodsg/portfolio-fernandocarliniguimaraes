@@ -296,21 +296,43 @@ html.xray .laudo{background:rgba(236,231,220,.9)}
 .spine::before,.spine::after{content:'';position:absolute;left:calc(var(--yrw) + 22px);top:0;bottom:0;width:1px;background:var(--line2)}
 .spine::after{width:2px;margin-left:-.5px;background:var(--red);transform-origin:50% 0;transform:scaleY(var(--cp,0));opacity:.9}
 .no-js .spine::after,.rm .spine::after{transform:scaleY(1)}
-.spine li{display:grid;grid-template-columns:var(--yrw) 44px minmax(0,1fr) auto;gap:0 22px;align-items:center;padding:22px 0;border-top:1px solid var(--line);position:relative}
-.spine li:last-child{border-bottom:1px solid var(--line)}
-.yr{font-size:clamp(40px,5.2vw,80px);line-height:.9;font-variation-settings:"wdth" 62,"wght" 200;color:transparent;-webkit-text-stroke:1px var(--mut);transition:-webkit-text-stroke-color .3s}
-.spine li.on .yr{-webkit-text-stroke-color:var(--red)}
-.vb{justify-self:center;width:30px;height:18px;border:1.5px solid var(--bone2);border-radius:6px;position:relative;background:var(--bg);z-index:1;transition:border-color .3s,background-color .3s}
+.spine>li{display:grid;grid-template-columns:var(--yrw) 44px minmax(0,1fr) auto;gap:0 22px;align-items:start;padding:22px 0;border-top:1px solid var(--line);position:relative}
+.spine>li:last-child{border-bottom:1px solid var(--line)}
+.yr{align-self:start;font-size:clamp(40px,5.2vw,80px);line-height:.9;font-variation-settings:"wdth" 62,"wght" 200;color:transparent;-webkit-text-stroke:1px var(--mut);transition:-webkit-text-stroke-color .3s}
+.spine>li.on .yr{-webkit-text-stroke-color:var(--red)}
+.vb{justify-self:center;margin-top:calc(11px*var(--ts) + .64*clamp(18px,1.6vw,23px)*var(--ts));width:30px;height:18px;border:1.5px solid var(--bone2);border-radius:6px;position:relative;background:var(--bg);z-index:1;transition:border-color .3s,background-color .3s}
 .vb::before,.vb::after{content:'';position:absolute;top:50%;width:9px;height:1.5px;margin-top:-.75px;background:var(--bone2);transition:background-color .3s}
 .vb::before{right:100%}.vb::after{left:100%}
-.spine li.on .vb{border-color:var(--red);background:rgba(255,61,31,.22)}
-.spine li.on .vb::before,.spine li.on .vb::after{background:var(--red)}
+.spine>li.on .vb{border-color:var(--red);background:rgba(255,61,31,.22)}
+.spine>li.on .vb::before,.spine>li.on .vb::after{background:var(--red)}
 .per{display:block;font:400 calc(11px*var(--ts))/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:9px}
 .cg{font-size:calc(clamp(18px,1.6vw,23px)*var(--ts));line-height:1.28;font-weight:600;font-variation-settings:"wdth" 104;color:var(--mut);transition:color .35s}
-.spine li.on .cg,.rm .cg,.no-js .cg{color:var(--bone)}
+.spine>li.on .cg,.rm .cg,.no-js .cg{color:var(--bone)}
 .emp{font-weight:400;color:var(--mut)}
 .tag2{display:inline-block;margin-left:10px;font:400 calc(10px*var(--ts))/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--red);color:var(--red);padding:4px 6px;vertical-align:3px}
-.cid{font:400 calc(11px*var(--ts))/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.cid{align-self:start;font:400 calc(11px*var(--ts))/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+/* ---------- sanfona de cada cargo (Item 14): fechada mostra só a frase de abertura; aberta, os itens ---------- */
+.sf{margin-top:16px;max-width:68ch}
+.sf-b{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start;width:100%;margin:0;padding:0;border:0;background:none;color:var(--bone2);text-align:left;cursor:pointer;
+  font:400 calc(16px*var(--ts))/1.5 var(--disp);font-variation-settings:"wdth" 100}
+.sf-a{transition:color .3s}
+.sf-b:hover .sf-a,.spine>li.on .sf-a{color:var(--bone)}
+.sf-i{position:relative;width:28px;height:28px;margin-top:-2px;border:1px solid var(--line2);transition:border-color .3s,background-color .3s}
+.sf-i::before,.sf-i::after{content:'';position:absolute;left:50%;top:50%;width:12px;height:1.5px;margin:-.75px 0 0 -6px;background:var(--mut);transition:transform .4s cubic-bezier(.7,0,.2,1),background-color .3s}
+.sf-i::after{transform:rotate(90deg)}
+.sf-b:hover .sf-i{border-color:var(--red)}
+.sf-b[aria-expanded=true] .sf-i{border-color:var(--red);background:rgba(255,61,31,.14)}
+.sf-b[aria-expanded=true] .sf-i::before,.sf-b[aria-expanded=true] .sf-i::after{background:var(--red)}
+.sf-b[aria-expanded=true] .sf-i::after{transform:rotate(0)}
+.sf-p{display:grid;grid-template-rows:0fr;visibility:hidden;transition:grid-template-rows .5s cubic-bezier(.7,0,.2,1),visibility 0s .5s}
+.sf-b[aria-expanded=true]+.sf-p{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .5s cubic-bezier(.7,0,.2,1),visibility 0s}
+.sf-pi{min-height:0;overflow:hidden}
+.sf-pi ul{list-style:none;margin:0;padding:14px 0 2px;display:grid;gap:10px}
+.sf-pi li{position:relative;padding-left:22px;font:400 calc(15px*var(--ts))/1.55 var(--disp);color:var(--bone2)}
+.sf-pi li::before{content:'';position:absolute;left:0;top:.74em;width:10px;height:2px;background:var(--red)}
+.no-js .sf-b{pointer-events:none;cursor:default}
+.no-js .sf-i{display:none}
+.rm .sf-p,.rm .sf-i::before,.rm .sf-i::after{transition:none}
 .extra{display:grid;grid-template-columns:1fr 1fr 2.2fr;gap:28px;margin-top:clamp(50px,8vh,90px)}
 .extra h3{font:400 calc(10.5px*var(--ts))/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin:0 0 14px;padding-top:14px;border-top:1px solid var(--bone)}
 .extra p{margin:0 0 6px;font-size:calc(15px*var(--ts));line-height:1.5;color:var(--bone2)}
@@ -404,10 +426,12 @@ html.xray .mach{--bg:#0C0C0B;--plate:#141412;--plate2:#1B1A17;--bone:#ECE7DC;--b
   .q-txt p{font-size:calc(16.5px*var(--ts))}
   .spine{--yrw:0px}
   .spine::before,.spine::after{left:18px}
-  .spine li{grid-template-columns:36px minmax(0,1fr);gap:4px 14px}
+  .spine>li{grid-template-columns:36px minmax(0,1fr);gap:4px 14px}
   .yr{display:none}
   .cid{grid-column:2}
   .tag2{margin:8px 0 0;display:inline-block}
+  .sf{max-width:none}
+  .sf-b{font-size:calc(15.5px*var(--ts))}
   .extra{grid-template-columns:1fr}
   .rede ul{grid-template-columns:1fr;row-gap:36px}
   .node{grid-column:auto!important;grid-row:auto!important}

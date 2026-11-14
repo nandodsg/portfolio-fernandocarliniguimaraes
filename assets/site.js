@@ -881,15 +881,43 @@
   }
 
   /* ---------------- 03 · esqueleto ---------------- */
+  /* Sanfona de cada cargo (Item 14). O HTML sai com tudo aberto (sem JavaScript fica assim). Com JavaScript e movimento normal,
+     tudo fecha já na partida (sfSetup) e a rolagem abre o cargo que está no meio da tela e recolhe o anterior (initSpine);
+     o clique do visitante vale até ele sair da seção. Com movimento reduzido fica tudo aberto, e o botão ainda abre e fecha. */
+  var SF = [], sfManual = false, sfTimer = 0, SFAUTO = !!G && !RM;
+  function sfShow(s, open) {
+    s.b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    s.open = open;
+    clearTimeout(sfTimer);
+    if (G) sfTimer = setTimeout(function () { ST.refresh(); }, 560); /* a página mudou de altura: remede os gatilhos depois da transição */
+  }
+  function sfSetup() {
+    SF = $$('.spine>li').map(function (li) { return { li: li, b: $('.sf-b', li), open: true }; }).filter(function (s) { return s.b; });
+    SF.forEach(function (s) {
+      if (SFAUTO) { s.b.setAttribute('aria-expanded', 'false'); s.open = false; }
+      s.b.addEventListener('click', function () { sfManual = true; sfShow(s, !s.open); });
+    });
+  }
+  function sfOnly(s) { SF.forEach(function (o) { var want = o === s; if (o.open !== want) sfShow(o, want); }); }
+  sfSetup();
+
   function initSpine() {
-    var ol = $('.spine'), lis = $$('li', ol);
+    var ol = $('.spine'), lis = $$('.spine>li');
     if (!G || RM) return;
+    ST.create({ trigger: $('.traj'), start: 'top bottom', end: 'bottom top', onToggle: function (t) { if (!t.isActive) sfManual = false; } });
     G.fromTo(ol, { '--cp': 0 }, { '--cp': 1, ease: 'none', scrollTrigger: { trigger: ol, start: 'top 65%', end: 'bottom 65%', scrub: true } });
     lis.forEach(function (li) {
       G.fromTo($('.vb', li), { x: -46, rotation: -40, opacity: 0 }, { x: 0, rotation: 0, opacity: 1, ease: 'back.out(2.2)',
         scrollTrigger: { trigger: li, start: 'top 94%', end: 'top 68%', scrub: 0.4 } });
       if (!NARROW()) G.fromTo($('.yr', li), { yPercent: 35 }, { yPercent: -35, ease: 'none', scrollTrigger: { trigger: li, start: 'top bottom', end: 'bottom top', scrub: true } });
-      ST.create({ trigger: li, start: 'top 62%', end: 'bottom 62%', onToggle: function (s) { li.classList.toggle('on', s.isActive); if (s.isActive) decode($('.per', li), 520); } });
+      ST.create({ trigger: li, start: 'top 62%', end: 'bottom 62%', onToggle: function (s) {
+        li.classList.toggle('on', s.isActive);
+        if (s.isActive) {
+          decode($('.per', li), 520);
+          var sf = SF.filter(function (x) { return x.li === li; })[0];
+          if (sf && !sfManual) sfOnly(sf);
+        }
+      } });
     });
   }
 
