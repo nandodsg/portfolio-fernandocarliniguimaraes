@@ -10,7 +10,10 @@
   var RM = WN === 'rm' ? true : WN === 'norm' ? false : (!!CFG.rm || matchMedia('(prefers-reduced-motion: reduce)').matches);
   var FINE = matchMedia('(pointer: fine)').matches;
   var NARROW = function () { return innerWidth < 860; };
-  var DESK = !RM && !NARROW();
+  /* texto grande (passo 2 ou 3 do painel de configurações): a seção de projetos parada na altura da tela não comporta o
+     texto, então usa o mesmo desenho do celular, que cresce com o texto */
+  var BIG = +(H.dataset.ts || 0) >= 2;
+  var DESK = !RM && !NARROW() && !BIG;
   H.classList.toggle('rm', RM); H.classList.toggle('js-desk', DESK); H.classList.toggle('fine', FINE);
   var G = window.gsap, ST = window.ScrollTrigger;
   if (G) G.registerPlugin(ST);
@@ -984,15 +987,26 @@
   }
   function initEcg() {
     var ecg = $('.ecg'); if (!ecg || !G || RM) return;
-    var base = $('.base', ecg), tr = $('.trace', ecg);
+    var base = $('.base', ecg), tr = $('.trace', ecg), dot = $('.dot', ecg), rect = $('#ecgr', ecg);
     G.fromTo(base, { strokeDashoffset: 1 }, { strokeDashoffset: 0, ease: 'none', scrollTrigger: { trigger: ecg, start: 'top 92%', end: 'top 40%', scrub: true } });
-    var Lt = tr.getTotalLength(), lo = 0, hi = Lt;
-    for (var j = 0; j < 22; j++) { var md = (lo + hi) / 2; if (tr.getPointAtLength(md).x < 549) lo = md; else hi = md; }
-    var DUR = 2.6, at = DUR * (lo / Lt + 0.1) / 1.1;
-    var beat = G.timeline({ repeat: -1, paused: true })
-      .fromTo(tr, { strokeDashoffset: 0.1 }, { strokeDashoffset: -1, duration: DUR, ease: 'none' }, 0)
-      .call(beatPulse, null, at);
-    ST.create({ trigger: ecg, start: 'top bottom', end: 'bottom top', onToggle: function (s) { if (s.isActive) beat.play(); else beat.pause(); } });
+    /* varredura de monitor: a cabeça anda em velocidade constante no eixo x (uma máscara com rastro que se apaga),
+       o ponto acompanha a curva e o texto pulsa em cada pico do batimento */
+    var Lt = base.getTotalLength(), ys = [], N = 1400, k, p, last = 72;
+    for (k = 0; k <= N; k++) { p = base.getPointAtLength(Lt * k / N); ys[Math.round(p.x)] = p.y; }
+    for (k = 0; k <= 1000; k++) { if (ys[k] === undefined) ys[k] = last; last = ys[k]; }
+    var peaks = [95, 330, 565, 800], TAIL = 350, sw = { h: 0 }, ni = 0, SPAN = 1000 + TAIL;
+    function paint() {
+      var h = sw.h;
+      rect.setAttribute('x', (h - TAIL).toFixed(1));
+      var hx = Math.min(1000, Math.max(0, h));
+      dot.setAttribute('d', 'M' + hx.toFixed(1) + ' ' + ys[Math.round(hx)] + 'h.01');
+      dot.style.opacity = h > 0 && h <= 1000 ? 1 : 0;
+      while (ni < peaks.length && h >= peaks[ni]) { ni++; beatPulse(); }
+    }
+    var sweep = G.timeline({ repeat: -1, paused: true, repeatDelay: 0.35, onRepeat: function () { ni = 0; } })
+      .fromTo(sw, { h: 0 }, { h: SPAN, duration: 3.9, ease: 'none', onUpdate: paint }, 0);
+    paint();
+    ST.create({ trigger: ecg, start: 'top bottom', end: 'bottom top', onToggle: function (s) { if (s.isActive) sweep.play(); else sweep.pause(); } });
     stretchIn(cm, callme);
   }
 
@@ -1026,11 +1040,43 @@
     rmb.addEventListener('click', function () { window.name = RM ? 'norm' : 'rm'; location.reload(); });
   }
 
+  /* ---------------- configurações: tamanho do texto, movimento e idioma num painel só ---------------- */
+  var cfg = $('[data-cfg]');
+  if (cfg) {
+    var cb = $('.cfg-b', cfg), cp = $('.cfg-p', cfg), pinned = false, closeT = 0;
+    var setOpen = function (o) { if (o) cfg.setAttribute('data-open', ''); else cfg.removeAttribute('data-open'); cb.setAttribute('aria-expanded', o ? 'true' : 'false'); };
+    var hoverIn = function () { if (FINE) { clearTimeout(closeT); setOpen(true); } };
+    var hoverOut = function () { if (FINE && !pinned) { clearTimeout(closeT); closeT = setTimeout(function () { setOpen(false); }, 350); } };
+    [cb, cp].forEach(function (e) { e.addEventListener('pointerenter', hoverIn); e.addEventListener('pointerleave', hoverOut); });
+    cb.addEventListener('click', function () { if (pinned || (!FINE && cfg.hasAttribute('data-open'))) { pinned = false; setOpen(false); } else { pinned = true; setOpen(true); } });
+    var closeAll = function () { pinned = false; setOpen(false); };
+    cfg.addEventListener('keydown', function (e) { if (e.key === 'Escape' && cfg.hasAttribute('data-open')) { closeAll(); cb.focus(); } });
+    cfg.addEventListener('focusout', function (e) { if (e.relatedTarget && !cfg.contains(e.relatedTarget)) closeAll(); });
+    D.addEventListener('pointerdown', function (e) { if (!cfg.contains(e.target)) closeAll(); });
+    var sizes = $$('.cfg-s button', cfg);
+    var showTs = function () { var cur = H.dataset.ts || '0'; sizes.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.ts === cur ? 'true' : 'false'); }); };
+    showTs();
+    sizes.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var v = b.dataset.ts; if (v === '0') H.removeAttribute('data-ts'); else H.dataset.ts = v;
+        try { if (v === '0') localStorage.removeItem('ts'); else localStorage.setItem('ts', v); } catch (e) {}
+        showTs();
+        /* cruzar a fronteira do texto grande troca o desenho dos projetos: recarrega (window.name guarda o movimento) */
+        if ((+v >= 2) !== BIG) { location.reload(); return; }
+        requestAnimationFrame(function () { relayout(); });
+      });
+    });
+  }
+
   /* ---------------- texto trocado (idioma) ---------------- */
   function afterText() {
     buildName(); chars.forEach(setC); splitHeads(); fitCallme(); buildLabels(); MACH.relabel();
     if (xr) { var fb = $('.rod [data-capo]'); if (fb) fb.textContent = T('f3x'); }
     drawRede();
+    relayout();
+  }
+  /* a página mudou de altura (ex.: tamanho do texto): só remede os gatilhos, sem refazer os títulos */
+  function relayout() {
     if (G) { ST.refresh(); motorRender(); if (motorST) { motorMP.forEach(function (mp) { mp.cur = -1; }); motorST.update(); }
       machM.forEach(function (mm) { mm.cur = -1; mm.rv(); mm.st.update(); }); }
   }

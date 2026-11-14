@@ -5,6 +5,7 @@
 <meta name="description" content="Fernando Carlini Guimarães, gestor de dados e IA em Porto Alegre: quem sou, projetos, trajetória e onde escrevo e dou aula.">
 <link rel="preload" href="assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/site.css">
+<script>try{var t=localStorage.getItem("ts");if(/^[123]$/.test(t))document.documentElement.dataset.ts=t}catch(e){}</script>
 </head>
 <body>
 <a class="skip" data-i18n="skip" href="#quem-sou">Pular pro conteúdo</a>
@@ -213,8 +214,10 @@
 <section class="cont" data-oi="o6" data-origem="origem · CV › cabeçalho: LinkedIn e GitHub · sem telefone, sem e-mail" data-sec="" id="contato">
 <p class="kick"><b>05</b><span data-i18n="k6">Sinais vitais · contato</span><i></i><span data-i18n="k6r">LinkedIn ou GitHub</span></p>
 <svg aria-hidden="true" class="ecg" preserveaspectratio="none" viewbox="0 0 1000 120">
-<path class="base" d="M0 72H470l10-6 10 6H528l7 10 10-70 13 92 9-32H610l15-8 15 8H760l8-5 8 5H1000" pathlength="1"></path>
-<path class="trace" d="M0 72H470l10-6 10 6H528l7 10 10-70 13 92 9-32H610l15-8 15 8H760l8-5 8 5H1000" pathlength="1"></path>
+<defs><linearGradient id="ecgg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#000"></stop><stop offset="1" stop-color="#fff"></stop></linearGradient><mask height="240" id="ecgm" maskunits="userSpaceOnUse" width="1700" x="-350" y="-60"><rect fill="url(#ecgg)" height="240" id="ecgr" width="350" x="-350" y="-60"></rect></mask></defs>
+<path class="base" d="M0 72H20l10-6 10 6H78l7 10 10-70 13 92 9-32H160l15-8 15 8H255l10-6 10 6H313l7 10 10-70 13 92 9-32H395l15-8 15 8H490l10-6 10 6H548l7 10 10-70 13 92 9-32H630l15-8 15 8H725l10-6 10 6H783l7 10 10-70 13 92 9-32H865l15-8 15 8H1000" pathlength="1"></path>
+<path class="trace" d="M0 72H20l10-6 10 6H78l7 10 10-70 13 92 9-32H160l15-8 15 8H255l10-6 10 6H313l7 10 10-70 13 92 9-32H395l15-8 15 8H490l10-6 10 6H548l7 10 10-70 13 92 9-32H630l15-8 15 8H725l10-6 10 6H783l7 10 10-70 13 92 9-32H865l15-8 15 8H1000" mask="url(#ecgm)"></path>
+<path class="dot" d="M0 72h.01"></path>
 </svg>
 <h2 class="callme" data-callme="" data-i18n="h2c">Me chama!</h2>
 <p class="csub" data-i18n="csub">O caminho mais rápido é o LinkedIn.</p>
@@ -225,10 +228,18 @@
 <span data-i18n="f1">Este site conta visitas sem cookie</span>
 <span data-i18n="f2">Gerado do meu CV · atualiza sozinho</span>
 <button aria-pressed="false" data-capo="" data-i18n="f3" type="button">Abrir o capô deste site</button>
-<button aria-pressed="false" data-i18n="f4" data-rm="" type="button">Reduzir movimento</button>
-<span class="lang"><a data-lang="pt" href="./" aria-current="true">PT</a><a data-lang="en" href="en/" hreflang="en">EN</a></span>
 <span class="motor-site" data-i18n="f5"><b>motor deste site</b> · CV em texto → gerador em Python → HTML estático → esta página · sem cookie · fonte e animação servidas daqui mesmo</span>
 </footer>
+<div class="cfg" data-cfg="">
+<button aria-controls="cfg-p" aria-expanded="false" aria-label="Configurações" class="cfg-b" data-i18n-aria="cfgb" type="button"><span aria-hidden="true">Aa</span></button>
+<div aria-label="Configurações" class="cfg-p" data-i18n-aria="cfgb" id="cfg-p" role="group">
+<p class="cfg-h" data-i18n="cfgb">Configurações</p>
+<div class="cfg-r"><span class="cfg-l" data-i18n="cfgt">Tamanho do texto</span>
+<span class="cfg-s"><button aria-label="Tamanho padrão" aria-pressed="true" data-i18n-aria="cfgs0" data-ts="0" type="button">A</button><button aria-label="Texto grande" aria-pressed="false" data-i18n-aria="cfgs1" data-ts="1" type="button">A</button><button aria-label="Texto maior" aria-pressed="false" data-i18n-aria="cfgs2" data-ts="2" type="button">A</button><button aria-label="Texto máximo" aria-pressed="false" data-i18n-aria="cfgs3" data-ts="3" type="button">A</button></span></div>
+<div class="cfg-r"><span class="cfg-l" data-i18n="cfgm">Movimento</span><button aria-pressed="false" class="cfg-t" data-i18n="f4" data-rm="" type="button">Reduzir movimento</button></div>
+<div class="cfg-r"><span class="cfg-l" data-i18n="cfgi">Idioma</span><span class="lang"><a data-lang="pt" href="./" aria-current="true">PT</a><a data-lang="en" href="en/" hreflang="en">EN</a></span></div>
+</div>
+</div>
 
 <script src="assets/gsap.min.js"></script><script src="assets/ScrollTrigger.min.js"></script>
 <script>window.CFG={};window.EN={};</script>
