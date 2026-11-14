@@ -232,6 +232,14 @@ html.xray .laudo{background:rgba(236,231,220,.9)}
 .mach .seal{fill:var(--plate);stroke:var(--bone2);stroke-width:1.2}
 .mach .msg{fill:var(--bone2)}
 .mach .roll{fill:var(--plate);stroke:var(--bone2);stroke-width:1.2}
+.mach .fpt{fill:var(--bone2)}.mach .fpt.red{fill:var(--red)}
+.mach .feps{fill:none;stroke:var(--bone2);stroke-width:1.2;stroke-dasharray:5 5}
+.mach .fring{fill:rgba(255,61,31,.08);stroke:var(--bone);stroke-width:1.4}
+.mach .fring.red{fill:rgba(255,61,31,.22);stroke:var(--red)}
+.mach .fflood{stroke:var(--red);stroke-width:1.6}
+.mach .faddr{fill:none;stroke:var(--bone);stroke-width:1.4}
+.mach .flead{stroke:var(--mut);stroke-width:1;stroke-dasharray:3 4;fill:none}
+.mach .fcard{fill:var(--plate);stroke:var(--line2);stroke-width:1}
 
 /* ---------- celular: a máquina com câmera por etapa (amostra aprovada em direcoes/projetos-maquinas-celular.html) ---------- */
 .mpin{display:none}
@@ -463,3 +471,22 @@ html.xray .mach{--bg:#0C0C0B;--plate:#141412;--plate2:#1B1A17;--bone:#ECE7DC;--b
 .toast.on{opacity:1;transform:none}
 .rm .toast{transition:none;transform:none}
 .no-js .toast{display:none}
+.proj .p-meta .tag2{margin:0 12px 0 0;vertical-align:baseline}
+/* o case das enchentes (5º projeto, Item 18) tem os dois parágrafos mais longos da seção: no computador, a coluna do texto ganha uma medida mais compacta pra caber na tela parada */
+.js-desk .proj-case h3{font-size:clamp(22px,2.15vw,32px);margin-bottom:12px}
+.js-desk .proj-case .p-meta{margin-bottom:10px}
+.js-desk .proj-case .d{font-size:calc(14px*var(--ts));line-height:1.5;margin-bottom:9px}
+.js-desk .proj-case .p-note{margin-top:10px}
+.js-desk .proj-case .acts{margin-top:14px}
+.js-desk .proj-case .pstrip{margin-top:16px}
+@media (max-height:760px){
+  .js-desk .proj-case h3{font-size:clamp(20px,1.9vw,28px);margin-bottom:8px}
+  .js-desk .proj-case .d{font-size:calc(13px*var(--ts));line-height:1.45;margin-bottom:6px}
+  .js-desk .proj-case .acts{margin-top:10px}
+  .js-desk .proj-case .pstrip{margin-top:12px}
+}
+/* texto a 115% (o único passo do painel que ainda mantém a seção parada no computador): o case segue compacto e cresce menos que os outros, pra caber */
+html.js-desk[data-ts="1"] .proj-case h3{font-size:clamp(20px,1.9vw,28px);margin-bottom:8px}
+html.js-desk[data-ts="1"] .proj-case .d{font-size:calc(12.4px*var(--ts));line-height:1.42;margin-bottom:6px}
+html.js-desk[data-ts="1"] .proj-case .acts{margin-top:10px}
+html.js-desk[data-ts="1"] .proj-case .pstrip{margin-top:12px}

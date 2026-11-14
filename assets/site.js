@@ -662,10 +662,109 @@
     return { tl: tl, M: M };
   }
 
-    return { so: so, mz: mz, crm: crm, relabel: relabel };
+  /* =============================== A10 · case das enchentes (Item 18) =============================== */
+  /* O desenho é o da amostra aprovada (direcoes/case-enchentes.html, máquina vanilla com 5 estados); aqui cada elemento ganha os mesmos 5 estados
+     como tweens da linha do tempo, uma sub-etapa por vez: 01 pontos de uma pessoa, 02 vizinhança, 03 centros de gravidade, 04 mancha da inundação
+     (com o endereço do cadastro fora), 05 mapa com muitas pessoas e as três ações. */
+  var FLN = 0;
+  function rng(seed) { return function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
+  function inPoly(x, y, P) { var c = false; for (var i = 0, j = P.length - 1; i < P.length; j = i++) { var xi = P[i][0], yi = P[i][1], xj = P[j][0], yj = P[j][1]; if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) c = !c; } return c; }
+  function fl(svg) {
+    var tl = G.timeline({ defaults: { ease: 'power2.inOut' } }), els = [];
+    /* node, os 5 estados { o: opacidade, x, y, s: escala } (campo ausente = 1, 0, 0, 1) e o atraso extra em segundos */
+    function E(node, st, d) { els.push({ n: node, s: st, d: d || 0 }); return node; }
+    var defs = S('defs', {}, svg), hid = 'hach' + (++FLN);
+    var pat = S('pattern', { id: hid, width: 9, height: 9, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+    S('rect', { width: 9, height: 9, fill: 'rgba(255,61,31,.06)' }, pat); S('line', { x1: 0, y1: 0, x2: 0, y2: 9, stroke: 'rgba(255,61,31,.45)', 'stroke-width': 2 }, pat);
+    var OFF = { o: 0 }, ON = { o: 1 }, ONLY4 = [OFF, OFF, OFF, ON, ON];
+    // 05 · a população (atrás de tudo)
+    var FLOOD = [[360, 62], [700, 62], [700, 238], [610, 214], [524, 246], [444, 214], [384, 158]];
+    var g5 = S('g', {}, svg), r = rng(7), pop = [], i, x, y;
+    for (i = 0; i < 46; i++) {
+      x = 36 + r() * 650; y = 56 + r() * 236;
+      if (Math.hypot(x - 200, y - 258) < 40 || Math.hypot(x - 480, y - 150) < 26) continue;
+      pop.push([x, y]);
+    }
+    pop.forEach(function (p) {
+      var hit = inPoly(p[0], p[1], FLOOD), d = S('circle', { cx: p[0], cy: p[1], r: 3.8, 'class': 'fpt' + (hit ? ' red' : '') }, g5);
+      E(d, [OFF, OFF, OFF, OFF, { o: hit ? 1 : 0.6 }], 0);
+    });
+    // 04 · a mancha oficial
+    E(S('path', { d: 'M' + FLOOD.map(function (p) { return p.join(' '); }).join('L') + 'Z', 'class': 'fflood', fill: 'url(#' + hid + ')' }, svg), ONLY4);
+    E(TX(svg, 690, 82, 'MANCHA OFICIAL · UFRGS', 'lbl r', 'end'), ONLY4);
+    // 01 · os pontos de uma pessoa: casa, trabalho, passagem e quatro soltos
+    var HOME = [200, 258], WORK = [480, 150], VISIT = [566, 318], gP = S('g', {}, svg), pts = [];
+    function cluster(c, n, rad, seed) { var q = rng(seed); for (var k = 0; k < n; k++) { var a = q() * 6.283, d = Math.sqrt(q()) * rad; pts.push({ x: c[0] + Math.cos(a) * d, y: c[1] + Math.sin(a) * d, c: c }); } }
+    cluster(HOME, 12, 34, 11); cluster(WORK, 9, 28, 23); cluster(VISIT, 4, 20, 31);
+    [[330, 120], [120, 150], [340, 330], [640, 200]].forEach(function (p) { pts.push({ x: p[0], y: p[1], c: null }); });
+    pts.forEach(function (p, k) {
+      var toC = p.c ? { x: p.c[0] - p.x, y: p.c[1] - p.y, o: 0, s: 0.2 } : null;
+      E(S('circle', { cx: p.x, cy: p.y, r: 4.6, 'class': 'fpt' }, gP), [ON, { o: p.c ? 1 : 0.22 }, toC || OFF, toC || OFF, OFF], k * 0.04);
+    });
+    // 02 · a vizinhança (ε) de cada lugar: o modelo acha quantos são, sem chute
+    [[HOME, 50], [WORK, 42], [VISIT, 30]].forEach(function (c, k) {
+      E(S('circle', { cx: c[0][0], cy: c[0][1], r: c[1], 'class': 'feps' }, svg), [OFF, ON, OFF, OFF, OFF], k * 0.15);
+    });
+    E(TX(svg, HOME[0] - 50, HOME[1] - 58, 'ε · vizinhança', 'lbl b'), [OFF, ON, OFF, OFF, OFF]);
+    E(TX(svg, 40, 78, 'LUGARES: ?', 'lbl r'), [ON, OFF, OFF, OFF, OFF]);
+    E(TX(svg, 40, 78, 'LUGARES: 3 (ACHADOS, NÃO CHUTADOS)', 'lbl r'), [OFF, ON, OFF, OFF, OFF]);
+    // 03 · os centros de gravidade (casa, trabalho, passagem), com pesos diferentes
+    [[HOME, 22, 'CASA', 0], [WORK, 17, 'TRABALHO', 1], [VISIT, 8, 'PASSAGEM', 0]].forEach(function (c, k) {
+      var lit = c[3], st3 = [OFF, OFF, ON, ON, OFF];
+      E(S('circle', { cx: c[0][0], cy: c[0][1], r: c[1], 'class': 'fring' }, svg), st3, k * 0.12);
+      E(S('circle', { cx: c[0][0], cy: c[0][1], r: 3, fill: BONE }, svg), st3);
+      E(TX(svg, c[0][0], c[0][1] + c[1] + 17, c[2], 'lbl b', 'middle'), st3);
+      if (lit) { /* o centro do trabalho cai dentro da mancha */
+        E(S('circle', { cx: c[0][0], cy: c[0][1], r: c[1], 'class': 'fring red' }, svg), [OFF, OFF, OFF, ON, OFF]);
+        E(TX(svg, c[0][0], c[0][1] - c[1] - 10, 'ATINGIDO', 'lbl r', 'middle'), [OFF, OFF, OFF, ON, OFF]);
+      }
+    });
+    // 04 · o endereço do cadastro fica fora da mancha, e o centro de gravidade dentro
+    var ad = S('g', {}, svg);
+    S('rect', { x: 292, y: 288, width: 16, height: 16, 'class': 'faddr' }, ad); S('path', { d: 'M292 288L308 304M308 288L292 304', 'class': 'faddr' }, ad);
+    var ONLY3 = [OFF, OFF, OFF, ON, OFF];
+    E(ad, ONLY3);
+    E(TX(svg, 300, 332, 'ENDEREÇO DO CADASTRO: FORA', 'lbl b', 'middle'), ONLY3);
+    E(S('path', { d: 'M222 266C250 276 272 284 290 294', 'class': 'flead' }, svg), ONLY3);
+    E(TX(svg, 40, 100, 'CENTRO DE GRAVIDADE: DENTRO', 'lbl r'), ONLY3);
+    // 05 · do mapa à ação: três cartões, cada um ligado à mancha
+    [['ACESSO AO APP', 70], ['CRÉDITO', 270], ['RECONSTRUÇÃO', 470]].forEach(function (c, k) {
+      var g = S('g', {}, svg);
+      S('rect', { x: c[1], y: 322, width: 180, height: 58, 'class': 'fcard' }, g); S('rect', { x: c[1], y: 322, width: 180, height: 3, fill: RED }, g);
+      TX(g, c[1] + 14, 356, c[0], 'lbl b'); TX(g, c[1] + 14, 372, 'PRIORIZADO', 'lbl r');
+      E(g, [{ o: 0, y: 14 }, { o: 0, y: 14 }, { o: 0, y: 14 }, { o: 0, y: 14 }, { o: 1, y: 0 }], 0.3 + k * 0.18);
+      E(S('path', { d: 'M' + (c[1] + 90) + ' 322V' + (270 + k * 6) + 'L524 246', 'class': 'flead' }, svg), [OFF, OFF, OFF, OFF, ON], 0.2 + k * 0.18);
+    });
+    E(TX(svg, 690, 420, 'PRIMEIRA VERSÃO: MENOS DE UMA SEMANA', 'lbl r', 'end'), [OFF, OFF, OFF, OFF, ON], 0.9);
+
+    /* os estados viram tweens: cada sub-etapa na sua marca */
+    var M = [0, 2.5, 5, 7.5, 10], TD = 0.8;
+    function norm(s) { s = s || {}; return { o: s.o == null ? 1 : s.o, x: s.x || 0, y: s.y || 0, s: s.s == null ? 1 : s.s }; }
+    function same(a, b) { return a.o === b.o && a.x === b.x && a.y === b.y && a.s === b.s; }
+    els.forEach(function (it) {
+      var c = norm(it.s[0]), n = it.n;
+      G.set(n, { opacity: 0, x: c.x, y: c.y, scale: c.s, transformOrigin: '50% 50%' });
+      c = { o: 0, x: c.x, y: c.y, s: c.s };
+      for (var k = 0; k < 5; k++) {
+        var t = norm(it.s[k]), at = (k ? M[k] : 0.2) + it.d, move = { x: t.x, y: t.y, scale: t.s };
+        if (t.o === 0) {
+          if (c.o > 0) { tl.to(n, same({ o: 0, x: c.x, y: c.y, s: c.s }, { o: 0, x: t.x, y: t.y, s: t.s }) ? { opacity: 0, duration: TD * 0.7 } : { opacity: 0, x: t.x, y: t.y, scale: t.s, duration: TD }, at); c = { o: 0, x: t.x, y: t.y, s: t.s }; } /* some (indo pro centro, se for o caso) */
+          else if (!same(c, t)) { tl.set(n, move, at); c = { o: 0, x: t.x, y: t.y, s: t.s }; }
+        } else if (c.o === 0) {
+          tl.set(n, move, at).to(n, { opacity: t.o, duration: TD * 0.7 }, at); c = t;              /* volta já no lugar */
+        } else if (!same(c, t)) {
+          tl.to(n, { opacity: t.o, x: t.x, y: t.y, scale: t.s, duration: TD }, at); c = t;
+        }
+      }
+    });
+    tl.to({}, { duration: 2.2 }, M[4]);
+    return { tl: tl, M: M };
+  }
+
+    return { so: so, mz: mz, crm: crm, fl: fl, relabel: relabel };
   })();
 
-  /* ---------------- 02 · projetos: vista explodida no primeiro, uma máquina em cada um dos outros ---------------- */
+  /* ---------------- 02 · projetos: vista explodida no primeiro, uma máquina em cada um dos outros (o 5º é o case das enchentes, Item 18) ---------------- */
   var motor = $('[data-motor]'), projs = $$('.proj', motor), sets = $$('.labels', motor), motorST = null, motorPlace = null, motorRender = function () {}, motorMP = [];
   var MD = 10.2; /* segundos da linha do tempo por máquina = cerca de 3,4 telas de rolagem, como na amostra aprovada */
   function buildLabels() {
@@ -698,14 +797,14 @@
   }
   /* ---------------- celular: as mesmas máquinas, com câmera (amostra aprovada: planos/2026-11-13-portfolio/direcoes/projetos-maquinas-celular.html) ---------------- */
   /* [centro x, centro y, largura] em unidades do desenho; a altura sai da proporção da caixa (1:1). 1 ou 2 quadros por etapa: o 2º é pra onde a câmera desliza durante a etapa. */
-  var CAMF = {"so": [[[140, 160, 300], [290, 160, 300]], [[20, 150, 300], [560, 150, 300]], [[250, 150, 380], [420, 150, 380]], [[260, 215, 380], [560, 215, 380]], [[172, 375, 340], [490, 385, 420]]], "mz": [[[210, 230, 380], [500, 240, 380]], [[210, 310, 380], [270, 310, 380]], [[440, 320, 480]], [[450, 320, 470]], [[290, 330, 380], [600, 330, 380]]], "crm": [[[160, 170, 360], [290, 170, 360]], [[330, 165, 340]], [[400, 150, 360], [500, 150, 440]], [[520, 360, 400]], [[500, 450, 420]]]};
+  var CAMF = {"so": [[[140, 160, 300], [290, 160, 300]], [[20, 150, 300], [560, 150, 300]], [[250, 150, 380], [420, 150, 380]], [[260, 215, 380], [560, 215, 380]], [[172, 375, 340], [490, 385, 420]]], "mz": [[[210, 230, 380], [500, 240, 380]], [[210, 310, 380], [270, 310, 380]], [[440, 320, 480]], [[450, 320, 470]], [[290, 330, 380], [600, 330, 380]]], "crm": [[[160, 170, 360], [290, 170, 360]], [[330, 165, 340]], [[400, 150, 360], [500, 150, 440]], [[520, 360, 400]], [[500, 450, 420]]], "fl": [[[310, 210, 600]], [[310, 215, 600]], [[360, 235, 580]], [[370, 205, 670]], [[340, 165, 540], [380, 335, 540]]]};
   var machM = [];
   function mCap(m, k) {
     var li = $$('.pecas li', m.p)[k];
     $('.n', m.cap).innerHTML = '<b>' + pad2(k + 1) + '</b>/ 05';
     decodeTo($('strong', m.cap), $('b', li).textContent, 380); decodeTo($('em', m.cap), $('span', li).textContent, 600);
   }
-  /* a parte comum às quatro: caixa quadrada, legenda grande e tira, tudo numa seção parada com pin */
+  /* a parte comum às cinco: caixa quadrada, legenda grande e tira, tudo numa seção parada com pin */
   function mountM(p, boxInner, setup) {
     var anchor = $('.acts', p) || $('.p-note', p), strip = $('.pstrip', p);
     if (!anchor) return;
@@ -741,7 +840,7 @@
     addEventListener('resize', m.rv);
     machM.push(mm);
   }
-  /* as três máquinas planas: o viewBox do SVG é a câmera */
+  /* as quatro máquinas planas: o viewBox do SVG é a câmera */
   function initMachM(p, key, build) {
     mountM(p, '<svg viewBox="0 60 720 466"></svg>', function (box) {
       var svg = $('svg', box), cam = { cx: 0, cy: 0, w: 1 }, frames = CAMF[key];
@@ -791,7 +890,7 @@
     if (DESK && G) {
       var stage = $('.stage', motor), xv = $('.xv', motor), stack = $('.stack', motor), spin = $('.spin', motor), plates = $$('.plate', motor), sig = $('.sig', motor);
       var svg = $('.leaders', motor), mw = $('.mwipe', motor), segs = $$('.mseg button', motor), machEls = $$('.mach', motor);
-      var MB = [null, MACH.so, MACH.mz, MACH.crm];
+      var MB = [null, MACH.so, MACH.mz, MACH.crm, MACH.fl];
       var S = { sep: 0, lab: 0, sig: -1 };
       var GAP = function () { return Math.min(92, stage.clientHeight * 0.16); };
       var render = motorRender = function () {
@@ -828,7 +927,7 @@
             .to(S, { sig: -1, duration: 0.01, ease: 'none', onUpdate: render })
             .to({}, { duration: 0.35 });
         } else {
-          /* os outros três: a máquina da amostra aprovada, com a linha do tempo dela encaixada na da seção */
+          /* os outros quatro: a máquina da amostra aprovada, com a linha do tempo dela encaixada na da seção */
           var me = machEls[i - 1], m = MB[i]($('svg', me)), t0 = tl.duration(), sc = MD / m.tl.duration();
           tl.add(m.tl.duration(MD), t0);
           motorMP.push({ k: i, el: me, strip: $('.pstrip', p), t0: t0, end: t0 + MD, ph: m.M.map(function (x) { return t0 + x * sc; }), on: m.onPhase, cur: -1 });
@@ -891,10 +990,10 @@
       });
       addEventListener('resize', render);
     } else if (G && !RM) {
-      /* celular e telas estreitas: os quatro projetos ganham a seção parada com pin enquanto se rola: os três com máquina plana e câmera por etapa,
+      /* celular e telas estreitas: os cinco projetos ganham a seção parada com pin enquanto se rola: os quatro com máquina plana e câmera por etapa,
          o Mercado com a vista explodida em 3D (a pilha é a câmera); legenda grande e tira de peças embaixo (amostras aprovadas em planos/2026-11-13-portfolio/direcoes/) */
       H.classList.add('js-mach');
-      var KEYS = [null, 'so', 'mz', 'crm'], MBM = [null, MACH.so, MACH.mz, MACH.crm];
+      var KEYS = [null, 'so', 'mz', 'crm', 'fl'], MBM = [null, MACH.so, MACH.mz, MACH.crm, MACH.fl];
       projs.forEach(function (p, k) {
         if (k) initMachM(p, KEYS[k], MBM[k]); else initMercadoM(p);
       });
