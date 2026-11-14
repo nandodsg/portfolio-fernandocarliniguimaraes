@@ -140,8 +140,28 @@
     if (h.charAt(0) !== '#') return;
     var t = D.getElementById(h.slice(1)); if (!t) return;
     e.preventDefault();
-    scrollTo({ top: t.getBoundingClientRect().top + scrollY, behavior: RM ? 'auto' : 'smooth' });
+    goTo(function () { return t.getBoundingClientRect().top + scrollY; });
   });
+
+  /* Rolagem até um lugar da página (medidor lateral, setas do teclado). A posição de chegada é medida de novo a cada quadro
+     (as sanfonas, os pins e as fontes mudam a altura da página no caminho; com a medida do clique a página pousava no lugar
+     errado), e enquanto anda nada abre nem fecha sozinho (navBusy). O visitante que gira o mouse, toca ou aperta outra
+     tecla interrompe. Movimento reduzido vai direto. */
+  var navBusy = false, navRaf = 0;
+  function navStop() { if (!navBusy) return; navBusy = false; cancelAnimationFrame(navRaf); sfTick(); }
+  function goTo(yFn) {
+    cancelAnimationFrame(navRaf);
+    var y0 = scrollY, y1 = yFn(), dist = Math.abs(y1 - y0);
+    if (RM || dist < 2) { navBusy = false; scrollTo({ top: y1, left: 0, behavior: 'instant' }); sfTick(); return; }
+    var dur = Math.min(1500, 450 + Math.sqrt(dist) * 17), t0 = performance.now(); navBusy = true;
+    (function f(now) {
+      var p = Math.min(1, (now - t0) / dur), e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2, yt = yFn();
+      scrollTo({ top: Math.round(y0 + (yt - y0) * e), left: 0, behavior: 'instant' });
+      if (p < 1) navRaf = requestAnimationFrame(f);
+      else { navBusy = false; sfTick(); }
+    })(t0);
+  }
+  ['wheel', 'touchstart', 'mousedown'].forEach(function (ev) { addEventListener(ev, navStop, { passive: true }); });
 
   /* ---------------- títulos-pistão e linhas das legendas ---------------- */
   var heads = $$('[data-split]');
@@ -646,7 +666,7 @@
   })();
 
   /* ---------------- 02 · projetos: vista explodida no primeiro, uma máquina em cada um dos outros ---------------- */
-  var motor = $('[data-motor]'), projs = $$('.proj', motor), sets = $$('.labels', motor), motorST = null, motorRender = function () {}, motorMP = [];
+  var motor = $('[data-motor]'), projs = $$('.proj', motor), sets = $$('.labels', motor), motorST = null, motorPlace = null, motorRender = function () {}, motorMP = [];
   var MD = 10.2; /* segundos da linha do tempo por máquina = cerca de 3,4 telas de rolagem, como na amostra aprovada */
   function buildLabels() {
     var ol = sets[0];
@@ -854,6 +874,7 @@
           });
         }
       });
+      motorPlace = function (k) { return motorST.start + (motorST.end - motorST.start) * ((marks[k] + (k ? 0.1 : 0)) / tl.duration()) + 2; };
       segs.forEach(function (b, k) {
         b.addEventListener('click', function () {
           var y = motorST.start + (motorST.end - motorST.start) * ((marks[k] + (k ? 0.1 : 0)) / tl.duration());
@@ -882,42 +903,168 @@
 
   /* ---------------- 03 · esqueleto ---------------- */
   /* Sanfona de cada cargo (Item 14). O HTML sai com tudo aberto (sem JavaScript fica assim). Com JavaScript e movimento normal,
-     tudo fecha já na partida (sfSetup) e a rolagem abre o cargo que está no meio da tela e recolhe o anterior (initSpine);
-     o clique do visitante vale até ele sair da seção. Com movimento reduzido fica tudo aberto, e o botão ainda abre e fecha. */
-  var SF = [], sfManual = false, sfTimer = 0, SFAUTO = !!G && !RM;
-  function sfShow(s, open) {
+     tudo fecha já na partida (sfSetup) e a rolagem abre o cargo que cruza a linha de leitura; o clique do visitante vale até
+     ele sair da seção. Com movimento reduzido fica tudo aberto, e o botão ainda abre e fecha.
+     Passagem suave (reaberto em 2026-11-14): nada que o visitante está vendo anda sozinho. O cargo novo abre pra baixo (o título
+     dele fica parado); o anterior só fecha de vez depois de sair da tela por cima e a rolagem parar, e aí a rolagem é corrigida
+     na mesma hora (a página encolhe por cima e o que está na tela não se mexe). Quem sobe pra um cargo de cima vê o de baixo
+     fechando embaixo. O cargo ativo sai da posição de agora, não da medida guardada do ScrollTrigger (que só se atualiza depois
+     da transição e era a causa de pular o cargo seguinte). */
+  /* Barra vermelha da trajetória: vai até o fim do cargo que já passou da linha de leitura (40%) e fica lá. Sai da posição de agora
+     de cada quadro (antes era uma proporção da rolagem, que dava um tranco a cada sanfona que abria ou fechava): acompanha a sanfona
+     enquanto ela abre e não volta depois. Quando o cargo muda, a diferença entre onde a barra estava e onde ela deve ficar se desfaz
+     em ~0,2 s, pra ela não pular. */
+  var RL = 0.4; /* linha de leitura da Trajetória: o cargo que cruza 40% da altura da tela abre (o título fica no terço de cima e o texto tem a tela inteira embaixo) */
+  var cpOl = null, cpLis = [], cpK = -2, cpOff = 0, cpLast = 0, cpBusy = 0, cpRaf = 0, cpT = 0;
+  function cpTarget() {
+    var line = innerHeight * RL, k = -1, i;
+    for (i = 0; i < cpLis.length; i++) if (cpLis[i].getBoundingClientRect().top <= line) k = i;
+    var o = cpOl.getBoundingClientRect();
+    return { k: k, y: k < 0 ? 0 : cpLis[k].getBoundingClientRect().bottom - o.top, h: o.height };
+  }
+  function cpFrame() {
+    if (!cpOl) return;
+    var now = performance.now(), t = cpTarget(), dt = cpT ? Math.min(100, now - cpT) : 16; cpT = now;
+    if (t.k !== cpK) { if (cpK !== -2) cpOff = cpLast - t.y; cpK = t.k; }
+    cpOff *= Math.exp(-dt / 200); if (Math.abs(cpOff) < 0.5) cpOff = 0;
+    cpLast = t.y + cpOff;
+    cpOl.style.setProperty('--cp', Math.max(0, Math.min(1, cpLast / (t.h || 1))).toFixed(4));
+    if (cpOff !== 0) cpRun();
+    return cpOff !== 0;
+  }
+  function cpLoop() {
+    cpRaf = 0; var more = cpFrame();
+    if (!cpRaf) { if (more || performance.now() < cpBusy) cpRaf = requestAnimationFrame(cpLoop); else cpT = 0; }
+  }
+  function cpRun() { if (!cpRaf && cpOl) cpRaf = requestAnimationFrame(cpLoop); }
+  function cpSnap() { cpOff = 0; if (cpOl) { cpFrame(); } }
+  var SF = [], sfManual = false, sfTimer = 0, sfIdleT = 0, sfCur = -1, SFAUTO = !!G && !RM;
+  function sfSet(s, open, now) {
+    var fx = s.b.nextElementSibling;
+    if (now && fx) fx.style.transition = 'none';
     s.b.setAttribute('aria-expanded', open ? 'true' : 'false');
     s.open = open;
-    clearTimeout(sfTimer);
-    if (G) sfTimer = setTimeout(function () { ST.refresh(); }, 560); /* a página mudou de altura: remede os gatilhos depois da transição */
+    if (now && fx) { void fx.offsetHeight; fx.style.transition = ''; }
+    cpBusy = performance.now() + (now ? 60 : 900); cpRun();
   }
+  function sfRefreshLater() {
+    clearTimeout(sfTimer);
+    if (G) sfTimer = setTimeout(function () { ST.refresh(); }, 720); /* a página mudou de altura: remede os gatilhos depois da transição */
+  }
+  function sfShow(s, open) { sfSet(s, open, false); sfRefreshLater(); }
   function sfSetup() {
     SF = $$('.spine>li').map(function (li) { return { li: li, b: $('.sf-b', li), open: true }; }).filter(function (s) { return s.b; });
     SF.forEach(function (s) {
-      if (SFAUTO) { s.b.setAttribute('aria-expanded', 'false'); s.open = false; }
+      if (SFAUTO) sfSet(s, false, true); /* fecha na hora, sem transição: os gatilhos do resto da página são medidos já com a Trajetória fechada */
       s.b.addEventListener('click', function () { sfManual = true; sfShow(s, !s.open); });
     });
   }
-  function sfOnly(s) { SF.forEach(function (o) { var want = o === s; if (o.open !== want) sfShow(o, want); }); }
+  /* fecha na hora o cargo que já saiu da tela por cima e corrige a rolagem do tanto que a página encolheu */
+  function sfIdle() {
+    if (sfManual || !SFAUTO || navBusy) return;
+    var ref = $('.traj').nextElementSibling, t0 = ref ? ref.getBoundingClientRect().top : 0;
+    /* primeiro mede todos, depois fecha: fechar um cargo move os de baixo e enganaria a medida seguinte */
+    var gone = SF.filter(function (s, i) { return s.open && i !== sfCur && s.li.getBoundingClientRect().bottom < -40; });
+    if (!gone.length) return;
+    gone.forEach(function (s) { sfSet(s, false, true); });
+    /* mede de novo o que vem depois da seção: se o navegador já recuou a rolagem (fim da página), só falta o resto */
+    if (ref) { var d = ref.getBoundingClientRect().top - t0; if (d) scrollTo({ top: scrollY + d, left: scrollX, behavior: 'instant' }); }
+    cpSnap();
+    if (G) ST.refresh();
+  }
+  /* ativa o cargo k (o que cruza a linha de leitura): abre ele e arruma os outros sem mexer no que está à vista */
+  function sfActivate(k) {
+    sfCur = k;
+    SF.forEach(function (s, i) {
+      s.li.classList.toggle('on', i === k);
+      if (i === k) decode($('.per', s.li), 520);
+    });
+    if (sfManual || !SFAUTO) return;
+    var vh = innerHeight, tops = SF.map(function (s) { return s.li.getBoundingClientRect().top; }); /* mede antes de fechar qualquer um */
+    SF.forEach(function (s, i) {
+      if (i === k) { if (!s.open) sfShow(s, true); return; }
+      if (!s.open) return;
+      if (tops[i] > vh + 40) sfSet(s, false, true); /* abaixo da tela: fecha na hora, ninguém vê */
+      else if (i > k) sfShow(s, false);                                     /* embaixo do ativo e à vista: fecha com a transição */
+      /* em cima do ativo: fica aberto até sair da tela (sfIdle) */
+    });
+    sfRefreshLater();
+  }
+  function sfTick() {
+    if (!SFAUTO) return;
+    cpFrame();
+    if (navBusy) return; /* andando por um botão ou seta: nada abre nem fecha até chegar */
+    var line = innerHeight * RL, k = -1;
+    for (var i = 0; i < SF.length; i++) { var r = SF[i].li.getBoundingClientRect(); if (r.top <= line && r.bottom > line) { k = i; break; } }
+    if (k >= 0 && k !== sfCur) sfActivate(k);
+    clearTimeout(sfIdleT); sfIdleT = setTimeout(sfIdle, 160);
+  }
   sfSetup();
 
   function initSpine() {
     var ol = $('.spine'), lis = $$('.spine>li');
     if (!G || RM) return;
-    ST.create({ trigger: $('.traj'), start: 'top bottom', end: 'bottom top', onToggle: function (t) { if (!t.isActive) sfManual = false; } });
-    G.fromTo(ol, { '--cp': 0 }, { '--cp': 1, ease: 'none', scrollTrigger: { trigger: ol, start: 'top 65%', end: 'bottom 65%', scrub: true } });
+    ST.create({ trigger: $('.traj'), start: 'top bottom', end: 'bottom top', onUpdate: sfTick, onToggle: function (t) { if (!t.isActive) sfManual = false; sfTick(); } });
+    cpOl = ol; cpLis = lis;
+    ST.create({ trigger: ol, start: 'top bottom', end: 'bottom top', onUpdate: cpFrame, onLeave: cpFrame, onLeaveBack: cpFrame });
     lis.forEach(function (li) {
       G.fromTo($('.vb', li), { x: -46, rotation: -40, opacity: 0 }, { x: 0, rotation: 0, opacity: 1, ease: 'back.out(2.2)',
         scrollTrigger: { trigger: li, start: 'top 94%', end: 'top 68%', scrub: 0.4 } });
       if (!NARROW()) G.fromTo($('.yr', li), { yPercent: 35 }, { yPercent: -35, ease: 'none', scrollTrigger: { trigger: li, start: 'top bottom', end: 'bottom top', scrub: true } });
-      ST.create({ trigger: li, start: 'top 62%', end: 'bottom 62%', onToggle: function (s) {
-        li.classList.toggle('on', s.isActive);
-        if (s.isActive) {
-          decode($('.per', li), 520);
-          var sf = SF.filter(function (x) { return x.li === li; })[0];
-          if (sf && !sfManual) sfOnly(sf);
-        }
-      } });
+    });
+  }
+
+  /* ---------------- setas do teclado (Item 17) ---------------- */
+  /* → e ↓ andam pro próximo lugar, ← e ↑ pro anterior. Lugares: as seções; dentro da Projetos, um projeto por vez; dentro da
+     Trajetória, um cargo por vez. As posições são medidas na hora de cada aperto (a altura da página muda com as sanfonas).
+     Não toma a seta de quem está num campo, num botão do painel de configurações ou com Ctrl, Alt, Shift ou Cmd; o painel tem a chave. */
+  var ARR = true, TOASTS = { pt: 'Dica: use as setas ← → do teclado para navegar', en: 'Tip: use the ← → arrow keys to move around the site' };
+  try { ARR = localStorage.getItem('arr') !== 'off'; } catch (e) {}
+  function secY(id) { var el = D.getElementById(id); return function () { return el.getBoundingClientRect().top + scrollY; }; }
+  function places() {
+    var L = [secY('topo'), secY('quem-sou')], i;
+    /* projetos: o pin da seção (computador) ou o de cada projeto (celular e texto grande); sem pin, cada bloco */
+    if (motorST && motorPlace) projs.forEach(function (p, k) { L.push(function () { return motorPlace(k); }); });
+    else if (machM.length) projs.forEach(function (p, k) { L.push(k && machM[k] ? function () { return machM[k].st.start + 2; } : secY('projetos')); });
+    else projs.forEach(function (p, k) { L.push(k ? function () { return p.getBoundingClientRect().top + scrollY - 20; } : secY('projetos')); });
+    /* trajetória: o primeiro cargo vem junto com o título da seção; os outros com o cargo cruzando a linha de leitura (é ele que abre) */
+    SF.forEach(function (s, k) { L.push(k ? function () { return s.li.getBoundingClientRect().top + scrollY - (innerHeight * RL - 70); } : secY('trajetoria')); });
+    L.push(secY('escrita'), secY('contato'));
+    return L;
+  }
+  function stepTo(dir) {
+    var ys = places().map(function (f) { return f(); }), cur = scrollY, pick = -1, i;
+    if (dir > 0) { for (i = 0; i < ys.length; i++) if (ys[i] > cur + 24) { pick = i; break; } }
+    else { for (i = ys.length - 1; i >= 0; i--) if (ys[i] < cur - 24) { pick = i; break; } }
+    if (pick < 0) return false;
+    goTo(places()[pick]);
+    return true;
+  }
+  var toastEl = null, toastT = 0;
+  function toastHide() { clearTimeout(toastT); if (toastEl) { toastEl.classList.remove('on'); } }
+  function toastShow() {
+    if (!ARR || !FINE) return;
+    try { if (localStorage.getItem('arr-visto')) return; localStorage.setItem('arr-visto', '1'); } catch (e) {}
+    toastEl = D.createElement('div'); toastEl.className = 'toast'; toastEl.setAttribute('role', 'status');
+    toastEl.textContent = TOASTS[lang === 'en' ? 'en' : 'pt']; D.body.appendChild(toastEl);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { toastEl.classList.add('on'); }); });
+    toastT = setTimeout(toastHide, 7000);
+  }
+  D.addEventListener('keydown', function (e) {
+    var k = e.key, dir = (k === 'ArrowRight' || k === 'ArrowDown') ? 1 : (k === 'ArrowLeft' || k === 'ArrowUp') ? -1 : 0;
+    if (k === 'Escape') toastHide();
+    if (!dir || !ARR || e.defaultPrevented || e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+    var t = e.target;
+    if (t && t.closest && t.closest('input,textarea,select,[contenteditable],[role=slider],[role=listbox],[role=menu],[role=tablist],[data-cfg]')) return;
+    if (stepTo(dir)) { e.preventDefault(); toastHide(); try { localStorage.setItem('arr-visto', '1'); } catch (er) {} }
+  });
+  var arrb = $('[data-arr]');
+  if (arrb) {
+    arrb.setAttribute('aria-pressed', ARR ? 'true' : 'false');
+    arrb.addEventListener('click', function () {
+      ARR = !ARR; arrb.setAttribute('aria-pressed', ARR ? 'true' : 'false');
+      try { if (ARR) localStorage.removeItem('arr'); else localStorage.setItem('arr', 'off'); } catch (e) {}
+      if (!ARR) toastHide();
     });
   }
 
@@ -1009,8 +1156,11 @@
     var w = inner.getBoundingClientRect().width;
     callme.style.fontSize = (100 * callme.clientWidth / w * 0.99).toFixed(2) + 'px';
   }
+  /* o "ME CHAMA!" só começa a bater depois de esticar até o tamanho final: antes os dois mexiam na mesma largura das letras
+     ao mesmo tempo e a primeira chegada ficava caótica */
+  var cmReady = false;
   function beatPulse() {
-    if (!cm.length) return;
+    if (!cm.length || !cmReady) return;
     G.fromTo(cm, { '--w': 125 }, { '--w': 84, duration: 0.11, ease: 'power2.out', yoyo: true, repeat: 1, stagger: { each: 0.03, from: 'center' } });
   }
   function initEcg() {
@@ -1035,7 +1185,9 @@
       .fromTo(sw, { h: 0 }, { h: SPAN, duration: 3.9, ease: 'none', onUpdate: paint }, 0);
     paint();
     ST.create({ trigger: ecg, start: 'top bottom', end: 'bottom top', onToggle: function (s) { if (s.isActive) sweep.play(); else sweep.pause(); } });
-    stretchIn(cm, callme);
+    G.fromTo(cm, { '--w': 62, '--g': 160 }, { '--w': 125, '--g': 800, duration: 1.15, ease: 'expo.out', stagger: 0.035,
+      scrollTrigger: { trigger: callme, start: 'top 88%', once: true }, onComplete: function () { cmReady = true; } });
+    /* a varredura só começa a contar picos quando o texto está pronto; se a página já estava lá embaixo, o pulso espera */
   }
 
   /* ---------------- capô do site (a página em negativo) ---------------- */
@@ -1121,6 +1273,7 @@
     initMotor(); initSpine(); drawRede(); initRede(); initEcg();
     if (G) ST.refresh();
     intro();
+    if (FINE) setTimeout(toastShow, 4000);
     requestAnimationFrame(heroLoop); requestAnimationFrame(lensTick); requestAnimationFrame(redeTick);
     if (CFG.xray) setXray(true);
     if (CFG.start) {
