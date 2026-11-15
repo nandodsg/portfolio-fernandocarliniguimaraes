@@ -303,7 +303,7 @@
     // 03 · MetricFlow: a camada semântica desce sobre a fila e trava
     var pl = S('g', {}, svg);
     S('rect', { x: 90, y: 124, width: 494, height: 62, 'class': 'plateL' }, pl);
-    S('rect', { x: 90, y: 107, width: 214, height: 17, 'class': 'tab' }, pl);
+    S('rect', { x: 90, y: 107, width: 252, height: 17, 'class': 'tab' }, pl);
     TX(pl, 98, 119, 'METRICFLOW · CAMADA SEMÂNTICA', 'lbl dk');
     var brk = [['M90 136V124H102'], ['M572 124H584V136'], ['M584 174V186H572'], ['M102 186H90V174']].map(function (d) { return S('path', { d: d[0], 'class': 'brk' }, pl); });
     G.set(pl, { y: -70, autoAlpha: 0 });
@@ -336,11 +336,11 @@
     G.set([gw, gg, flow], { autoAlpha: 0 }); G.set(cab, { strokeDashoffset: 1 });
     t0 = tl.duration() + 0.2; M.push(t0);
     tl.to(gw, { autoAlpha: 1, duration: 0.4 }, t0)
-      .to(cab, { strokeDashoffset: 0, duration: 0.8 }, t0 + 0.25)
-      .to(head, { autoAlpha: 1, duration: 0.4 }, t0 + 0.95)
-      .to(flow, { autoAlpha: 1, duration: 0.2 }, t0 + 0.95)
-      .to(gg, { autoAlpha: 1, duration: 0.4 }, t0 + 0.6)
-      .fromTo(ndl, { rotation: 0, svgOrigin: '661 300' }, { rotation: 0.3 * 180, svgOrigin: '661 300', duration: 1, ease: 'back.out(2)' }, t0 + 1);
+      .to(cab, { strokeDashoffset: 0, duration: 1.4, ease: 'power1.inOut' }, t0 + 0.25)
+      .to(head, { autoAlpha: 1, duration: 0.5 }, t0 + 1.55)
+      .to(flow, { autoAlpha: 1, duration: 0.3 }, t0 + 1.55)
+      .to(gg, { autoAlpha: 1, duration: 0.4 }, t0 + 0.9)
+      .fromTo(ndl, { rotation: 0, svgOrigin: '661 300' }, { rotation: 0.3 * 180, svgOrigin: '661 300', duration: 1, ease: 'back.out(2)' }, t0 + 1.7);
 
     // 05 · LLM + gold set: rótulos caem na bancada, três modelos contra a referência, o paquímetro escolhe
     var rows = [{ n: 'GOLD SET', y: 300, v: [1, 0, 1, 1, 0, 1, 0] }, { n: 'MODELO A', y: 352, v: [1, 1, 1, 0, 0, 1, 1] },
@@ -764,26 +764,29 @@
     return { so: so, mz: mz, crm: crm, fl: fl, relabel: relabel };
   })();
 
-  /* ---------------- 02 · projetos: vista explodida no primeiro, uma máquina em cada um dos outros (o 5º é o case das enchentes, Item 18) ---------------- */
-  var motor = $('[data-motor]'), projs = $$('.proj', motor), sets = $$('.labels', motor), motorST = null, motorPlace = null, motorRender = function () {}, motorMP = [];
-  var MD = 10.2; /* segundos da linha do tempo por máquina = cerca de 3,4 telas de rolagem, como na amostra aprovada */
+  /* ---------------- 02 · projetos tocando sozinhos (D15 A: projetos empilhados; no celular, a legenda suspensa sobre a animação) ---------------- */
+  var motor = $('[data-motor]'), projs = $$('.proj', motor), sets = $$('.labels', motor), motorST = null, motorPlace = null, motorRender = function () {}, motorMP = [], machM = [];
+  var WIDE = innerWidth >= 861;
+  var MD = 10.2;               /* a linha do tempo de cada máquina vale 10,2 s (o ritmo de hoje); cada sub-etapa fica com a fatia dela */
+  var HOLD = 3.5, HOLD5 = 5.5; /* pausa de leitura depois do movimento; na 05, mais 2 s parada antes de recomeçar */
+  /* a linha executiva de cada sub-etapa mora no HTML (<i class="pe" data-i18n="eNM">), então troca de idioma e leitura sem JavaScript valem sozinhas */
+  function EXE(k, j) { var e = $('.pe', $$('.pecas li', projs[k])[j]); return e ? e.textContent : ''; }
   function buildLabels() {
     var ol = sets[0];
     if (ol) ol.innerHTML = $$('.pecas li', projs[0]).map(function (li, i) {
       return '<li><b>' + pad2(i + 1) + '</b><strong>' + $('b', li).innerHTML + '</strong><span>' + $('span', li).innerHTML + '</span></li>';
     }).join('');
     projs.forEach(function (p) {
-      var strip = $('.pstrip', p); if (!strip) return;
+      var strip = $('.pstrip', p);
+      if (!strip) { /* o Mercado ganha a mesma tira 01-05 dos outros */
+        strip = D.createElement('div'); strip.className = 'pstrip'; strip.setAttribute('role', 'group'); strip.setAttribute('data-i18n-aria', 'stripa');
+        strip.setAttribute('aria-label', T('stripa') || ''); p.insertBefore(strip, $('.pecas-t', p));
+      }
       strip.innerHTML = $$('.pecas li', p).map(function (li, i) {
         var nm = $('b', li).textContent;
         return '<button type="button" aria-label="' + pad2(i + 1) + ' ' + ESC(nm) + '"><i></i><b>' + pad2(i + 1) + '</b><span>' + ESC(nm) + '</span></button>';
       }).join('');
     });
-  }
-  function capSet(mp, k) {
-    var li = $$('.pecas li', projs[mp.k])[k], cap = $('.cap', mp.el);
-    cap.innerHTML = '<b>' + pad2(k + 1) + '</b><span>/ 05</span><strong></strong><em></em>';
-    decodeTo($('strong', cap), $('b', li).textContent, 380); decodeTo($('em', cap), $('span', li).textContent, 600);
   }
   function decodeTo(el, fin, ms) {
     if (RM) { el.textContent = fin; return; }
@@ -795,209 +798,217 @@
       if (p < 1) el._raf = requestAnimationFrame(f);
     })(t0);
   }
-  /* ---------------- celular: as mesmas máquinas, com câmera (amostra aprovada: planos/2026-11-13-portfolio/direcoes/projetos-maquinas-celular.html) ---------------- */
-  /* [centro x, centro y, largura] em unidades do desenho; a altura sai da proporção da caixa (1:1). 1 ou 2 quadros por etapa: o 2º é pra onde a câmera desliza durante a etapa. */
-  var CAMF = {"so": [[[140, 160, 300], [290, 160, 300]], [[20, 150, 300], [560, 150, 300]], [[250, 150, 380], [420, 150, 380]], [[260, 215, 380], [560, 215, 380]], [[172, 375, 340], [490, 385, 420]]], "mz": [[[210, 230, 380], [500, 240, 380]], [[210, 310, 380], [270, 310, 380]], [[440, 320, 480]], [[450, 320, 470]], [[290, 330, 380], [600, 330, 380]]], "crm": [[[160, 170, 360], [290, 170, 360]], [[330, 165, 340]], [[400, 150, 360], [500, 150, 440]], [[520, 360, 400]], [[500, 450, 420]]], "fl": [[[310, 210, 600]], [[310, 215, 600]], [[360, 235, 580]], [[370, 205, 670]], [[340, 165, 540], [380, 335, 540]]]};
-  var machM = [];
-  function mCap(m, k) {
-    var li = $$('.pecas li', m.p)[k];
-    $('.n', m.cap).innerHTML = '<b>' + pad2(k + 1) + '</b>/ 05';
-    decodeTo($('strong', m.cap), $('b', li).textContent, 380); decodeTo($('em', m.cap), $('span', li).textContent, 600);
+
+  /* ---- as máquinas ---- */
+  /* computador: a máquina aprovada, legenda em cima */
+  function capWide(p, mach, j) {
+    var li = $$('.pecas li', p)[j], cap = $('.cap', mach);
+    cap.innerHTML = '<b>' + pad2(j + 1) + '</b><span>/ 05</span><strong></strong><em></em>';
+    decodeTo($('strong', cap), $('b', li).textContent, 380); decodeTo($('em', cap), $('span', li).textContent, 600);
   }
-  /* a parte comum às cinco: caixa quadrada, legenda grande e tira, tudo numa seção parada com pin */
-  function mountM(p, boxInner, setup) {
-    var anchor = $('.acts', p) || $('.p-note', p), strip = $('.pstrip', p);
-    if (!anchor) return;
-    if (!strip) {
-      strip = D.createElement('div'); strip.className = 'pstrip'; strip.setAttribute('role', 'group'); strip.setAttribute('data-i18n-aria', 'stripa');
-      strip.setAttribute('aria-label', T('stripa') || ''); p.insertBefore(strip, anchor); buildLabels();
+  /* O Mercado no computador (E12): a montagem inteira é o movimento da sub-etapa 01; depois o sinal sobe uma placa por sub-etapa e a pilha gira um pouco */
+  function mercadoW(cont) {
+    var stack = $('.stack', cont), spin = $('.spin', cont), plates = $$('.plate', cont), sig = $('.sig', cont), svg = $('.leaders', cont);
+    var S = { sep: 0, lab: 0, sig: -1 };
+    var GAP = function () { return Math.min(92, cont.clientHeight * 0.16); };
+    var render = motorRender = function () {
+      var g = GAP();
+      plates.forEach(function (p, i) { G.set(p, { z: i * (4 + S.sep * (g - 4)) }); });
+      var zTop = 4 * (4 + S.sep * (g - 4));
+      G.set(stack, { y: zTop * 0.43 });
+      if (S.sig >= 0) G.set(sig, { z: S.sig * zTop + 6, opacity: 1 }); else G.set(sig, { opacity: 0 });
+      var hot = plates.map(function (p, i) { var h = S.sig >= 0 && Math.abs(S.sig * 4 - i) < 0.55; p.classList.toggle('hot', h); return h; });
+      var sr = cont.getBoundingClientRect(), lis = $$('li', sets[0]), d = '', dots = '';
+      plates.forEach(function (p, i) {
+        var li = lis[i]; if (!li) return;
+        var r = p.getBoundingClientRect(), x = r.right - sr.left - 2, y = r.top + r.height / 2 - sr.top;
+        var lx = sr.width - li.offsetWidth - 14; li.style.top = y + 'px';
+        var o = Math.max(0, Math.min(1, S.lab * 5 - i)); if (S.sig >= 0 && !hot[i]) o *= 0.4;
+        li.style.opacity = o; li.classList.toggle('hot', hot[i]);
+        if (o > 0.01) { var m = x + (lx - x) * 0.35; d += 'M' + x + ' ' + y + ' L' + m + ' ' + y + ' L' + lx + ' ' + y; dots += '<circle cx="' + x + '" cy="' + y + '" r="3"/>'; }
+      });
+      svg.innerHTML = '<path d="' + d + '" style="opacity:' + Math.min(1, S.lab * 2) + '"/>' + dots;
+    };
+    G.set(stack, { rotationX: 0, scale: 0.9 }); render();
+    var tl = G.timeline({ defaults: { ease: 'power2.inOut' } }), M = [0];
+    tl.to(stack, { rotationX: 60, scale: 1, duration: 1, onUpdate: render }).to(spin, { rotationZ: -45, duration: 1 }, '<')
+      .to(S, { sep: 1, duration: 1.1, onUpdate: render })
+      .to(S, { lab: 1, duration: 0.8, ease: 'none', onUpdate: render }, '<.3')
+      .to(S, { sig: 0, duration: 0.01, ease: 'none', onUpdate: render });
+    var RZ = [-62, -38, -56, -45];
+    for (var k = 1; k < 5; k++) {
+      var t0 = tl.duration() + 0.2; M.push(t0);
+      tl.to(S, { sig: k / 4, duration: 1.6, ease: 'power1.inOut', onUpdate: render }, t0)
+        .to(spin, { rotationZ: RZ[k - 1], duration: 1.6, ease: 'sine.inOut', onUpdate: render }, t0);
     }
+    tl.to({}, { duration: 0.2 });
+    return { tl: tl, M: M, T: tl.duration(), rv: render };
+  }
+  /* celular: as mesmas máquinas planas, com câmera (CAMF) por sub-etapa, caixa quadrada */
+  var CAMF = {"so": [[[140, 160, 300], [290, 160, 300]], [[20, 150, 300], [560, 150, 300]], [[210, 150, 380], [275, 150, 380]], [[250, 215, 380], [560, 215, 380]], [[172, 375, 340], [490, 385, 420]]], "mz": [[[210, 230, 380], [500, 240, 380]], [[210, 310, 380], [270, 310, 380]], [[440, 320, 480]], [[450, 320, 470]], [[290, 330, 380], [600, 330, 380]]], "crm": [[[160, 170, 360], [290, 170, 360]], [[330, 165, 340]], [[400, 150, 360], [500, 150, 440]], [[520, 360, 400]], [[500, 450, 420]]], "fl": [[[310, 210, 600]], [[310, 215, 600]], [[360, 235, 580]], [[370, 205, 670]], [[340, 165, 540], [380, 335, 540]]]};
+  function camMach(k, box) {
+    var key = ['', 'so', 'mz', 'crm', 'fl'][k], build = [null, MACH.so, MACH.mz, MACH.crm, MACH.fl][k];
+    var svg = $('svg', box), cam = { cx: 0, cy: 0, w: 1 }, frames = CAMF[key];
+    function rv() {
+      var bw = box.clientWidth || 1, h = cam.w, kk = bw / cam.w;
+      svg.setAttribute('viewBox', (cam.cx - cam.w / 2).toFixed(1) + ' ' + (cam.cy - h / 2).toFixed(1) + ' ' + cam.w.toFixed(1) + ' ' + h.toFixed(1));
+      box.style.backgroundSize = (34 * kk * 0.5).toFixed(1) + 'px ' + (34 * kk * 0.5).toFixed(1) + 'px';
+      box.style.backgroundPosition = (-(cam.cx - cam.w / 2) * kk).toFixed(1) + 'px ' + (-(cam.cy - h / 2) * kk).toFixed(1) + 'px';
+    }
+    function F(a) { return { cx: a[0], cy: a[1], w: a[2] }; }
+    cam.cx = frames[0][0][0]; cam.cy = frames[0][0][1]; cam.w = frames[0][0][2]; rv();
+    var m = build(svg), T0 = m.tl.duration(), M = m.M.slice();
+    frames.forEach(function (fk, i) {
+      var a = M[i], z = i < M.length - 1 ? M[i + 1] : T0;
+      if (i > 0) m.tl.to(cam, Object.assign(F(fk[0]), { duration: 0.8, ease: 'power2.inOut', onUpdate: rv }), a);
+      if (fk[1]) m.tl.to(cam, Object.assign(F(fk[1]), { duration: Math.max(0.6, z - a - (i ? 1.2 : 0.7)), ease: 'sine.inOut', onUpdate: rv }), a + (i ? 1.0 : 0.4));
+    });
+    return { tl: m.tl, M: M, T: m.tl.duration(), onPhase: m.onPhase, rv: rv };
+  }
+  /* celular: o Mercado, a vista explodida em 3D onde a pilha é a câmera */
+  function mercadoM(box) {
+    var stack = $('.stack', box), spin = $('.spin', box), plates = $$('.plate', box), sig = $('.sig', box), st = { sep: 0, f: 0, sg: 0, zoom: 0 };
+    function render() {
+      var g = Math.min(60, box.clientHeight * 0.17), step = 4 + st.sep * (g - 4);
+      box.style.setProperty('--mps', Math.round(box.clientWidth * 0.45) + 'px');
+      plates.forEach(function (pl, i) { G.set(pl, { z: i * step }); });
+      G.set(stack, { y: st.f * step * 0.866, scale: 1 + 0.22 * st.zoom });
+      G.set(sig, { z: st.sg * step + 6, opacity: st.sep > 0.5 ? 1 : 0 });
+    }
+    G.set(stack, { rotationX: 0, scale: 0.9 }); render();
+    var tl = G.timeline({ defaults: { ease: 'power2.inOut' } }), M = [0];
+    tl.to(stack, { rotationX: 60, duration: 1.2 }).to(spin, { rotationZ: -45, duration: 1.2 }, '<')
+      .to(st, { sep: 1, duration: 1.3, onUpdate: render }, '<.3').to(st, { zoom: 1, duration: 1.2, onUpdate: render }, '<.2');
+    for (var k = 1; k < 5; k++) {
+      var t0 = tl.duration() + 0.55; M.push(t0);
+      tl.to(st, { f: k, sg: k, duration: 1.1, onUpdate: render }, t0);
+      if (k >= 2) tl.to(spin, { rotationZ: k === 2 ? -60 : k === 3 ? -30 : -45, duration: 1.4 }, t0 - 0.2);
+    }
+    tl.to({}, { duration: 1.2 });
+    return { tl: tl, M: M, T: tl.duration(), rv: render, onPhase: function (k) { plates.forEach(function (pl, i) { pl.classList.toggle('hot', i === k); pl.classList.toggle('dim', i !== k); }); } };
+  }
+  /* celular: caixa quadrada com a legenda suspensa na parte de baixo (número, nome da sub-etapa e a linha executiva) e a tira logo embaixo */
+  function squareO(k, p, pbox) {
     p.classList.add('has-m');
-    var pin = D.createElement('div'); pin.className = 'mpin';
-    pin.innerHTML = '<div class="mach mach-m" aria-hidden="true">' + boxInner + '</div><div class="capc" aria-hidden="true"><div class="n"></div><strong></strong><em></em></div>';
-    p.insertBefore(pin, anchor); pin.appendChild(strip);
-    var cap = $('.capc', pin), m = setup($('.mach-m', pin));
-    var sc = MD / m.T; m.tl.duration(MD);
-    var ph = m.M.map(function (x) { return x * sc; }), mm = { p: p, cap: cap, cur: -1, rv: m.rv };
-    var st = mm.st = ST.create({
-      animation: m.tl, trigger: pin, start: 'top top', pin: true, scrub: 0.6, anticipatePin: 1,
-      end: function () { return '+=' + Math.round(innerHeight * MD / 3.6); },
-      onUpdate: function (s) {
-        var t = s.progress * MD, k = 0; for (var j = 0; j < 5; j++) if (t >= ph[j] - 1e-3) k = j;
-        if (k !== mm.cur) { mm.cur = k; mCap(mm, k); if (m.onPhase) m.onPhase(k); }
-        $$('button', strip).forEach(function (b, j) {
-          var a = ph[j], z = j < 4 ? ph[j + 1] : MD;
-          b.style.setProperty('--p', Math.max(0, Math.min(1, (t - a) / (z - a))).toFixed(3)); b.classList.toggle('on', j === k);
-        });
-      }
-    });
-    mm.cur = 0; mCap(mm, 0); if (m.onPhase) m.onPhase(0); var b0 = $$('button', strip)[0]; if (b0) b0.classList.add('on');
-    strip.addEventListener('click', function (e) {
-      var b = e.target.closest('button'); if (!b) return;
-      var j = $$('button', strip).indexOf(b);
-      scrollTo({ top: st.start + (st.end - st.start) * ((ph[j] + 0.05) / MD) + 2, behavior: 'smooth' });
-    });
-    addEventListener('resize', m.rv);
-    machM.push(mm);
+    pbox.innerHTML = '<div class="mwrap"><div class="mach mach-m" aria-hidden="true">' + (k ? '<svg viewBox="0 60 720 466"></svg>' :
+      '<div class="xv"><div class="stack"><div class="spin">' + [1, 2, 3, 4, 5].map(function (i) { return '<div class="plate p' + i + '"><i></i><span class="no">0' + i + '</span></div>'; }).join('') + '<div class="sig"></div></div></div></div>') +
+      '</div><div class="lgd"><div class="n" aria-hidden="true"></div></div></div>';
+    var box = $('.mach-m', pbox), lgd = $('.lgd', pbox), m = k ? camMach(k, box) : mercadoM(box);
+    m.cap = function (j) {
+      var li = $$('.pecas li', p)[j];
+      $('.n', lgd).innerHTML = '<b>' + pad2(j + 1) + '</b><span>/ 05</span><strong></strong>';
+      decodeTo($('strong', lgd), $('b', li).textContent, 380);
+    };
+    m.lgd = lgd; m.fade = box; m.el = box; return m;
   }
-  /* as quatro máquinas planas: o viewBox do SVG é a câmera */
-  function initMachM(p, key, build) {
-    mountM(p, '<svg viewBox="0 60 720 466"></svg>', function (box) {
-      var svg = $('svg', box), cam = { cx: 0, cy: 0, w: 1 }, frames = CAMF[key];
-      function rv() {
-        var bw = box.clientWidth || 1, h = cam.w, k = bw / cam.w;
-        svg.setAttribute('viewBox', (cam.cx - cam.w / 2).toFixed(1) + ' ' + (cam.cy - h / 2).toFixed(1) + ' ' + cam.w.toFixed(1) + ' ' + h.toFixed(1));
-        box.style.backgroundSize = (34 * k * 0.5).toFixed(1) + 'px ' + (34 * k * 0.5).toFixed(1) + 'px'; /* a grade anda com a câmera: é do desenho, não da tela */
-        box.style.backgroundPosition = (-(cam.cx - cam.w / 2) * k).toFixed(1) + 'px ' + (-(cam.cy - h / 2) * k).toFixed(1) + 'px';
-      }
-      function F(a) { return { cx: a[0], cy: a[1], w: a[2] }; }
-      cam.cx = frames[0][0][0]; cam.cy = frames[0][0][1]; cam.w = frames[0][0][2]; rv();
-      var m = build(svg), T0 = m.tl.duration(), M = m.M.slice();
-      frames.forEach(function (fk, i) {
-        var a = M[i], z = i < M.length - 1 ? M[i + 1] : T0;
-        if (i > 0) m.tl.to(cam, Object.assign(F(fk[0]), { duration: 0.8, ease: 'power2.inOut', onUpdate: rv }), a);
-        if (fk[1]) m.tl.to(cam, Object.assign(F(fk[1]), { duration: Math.max(0.6, z - a - (i ? 1.2 : 0.7)), ease: 'sine.inOut', onUpdate: rv }), a + (i ? 1.0 : 0.4));
-      });
-      return { tl: m.tl, M: M, T: m.tl.duration(), onPhase: m.onPhase, rv: rv };
+
+  /* ---- o relógio único: cada máquina fica com a linha do tempo pausada e este relógio a anda só quando ela está tocando e visível ---- */
+  var MI = [], LAST = 0;
+  function mkCtl(p) {
+    var strip = $('.pstrip', p), pctl = D.createElement('div'), pp = D.createElement('button'), desc = D.createElement('p');
+    pctl.className = 'pctl'; strip.parentNode.insertBefore(pctl, strip); pctl.appendChild(strip);
+    pp.type = 'button'; pp.className = 'pp'; pp.setAttribute('aria-label', 'Pausar a animação'); pp.setAttribute('aria-pressed', 'false'); pctl.appendChild(pp);
+    desc.className = 'pdesc'; desc.innerHTML = '<b></b><span></span>'; pctl.parentNode.insertBefore(desc, pctl.nextSibling);
+    return { strip: strip, pctl: pctl, pp: pp, desc: desc };
+  }
+  function setPaused(mi, v) {
+    mi.paused = v; mi.c.pp.setAttribute('aria-pressed', v ? 'true' : 'false'); mi.c.pp.setAttribute('aria-label', v ? 'Tocar a animação' : 'Pausar a animação');
+  }
+  function showSub(mi) {
+    var j = mi.sub;
+    mi.bs.forEach(function (b, i) { b.classList.toggle('on', i === j); });
+    $('b', mi.c.desc).textContent = pad2(j + 1); decodeTo($('span', mi.c.desc), EXE(mi.k, j), 600);
+    if (mi.o.cap) mi.o.cap(j);
+    if (mi.o.onPhase) mi.o.onPhase(j);
+  }
+  function update(mi) {
+    var j = mi.sub, tt = mi.M[j] + Math.min(mi.t, mi.mv[j]) / mi.sc;
+    if (mi._tt !== tt) { mi._tt = tt; mi.o.tl.time(tt, false); }
+    mi.bs.forEach(function (b, i) {
+      var v = i < j ? 1 : i > j ? 0 : mi.t / (mi.mv[j] + mi.hold[j]);
+      if (b._v !== v) { b._v = v; b.style.setProperty('--p', v.toFixed(3)); }
     });
   }
-  /* o Mercado: as mesmas cinco placas e o mesmo sinal do desktop; a pilha é a câmera (sobe até a placa da vez, dá zoom, as outras escurecem) */
-  function initMercadoM(p) {
-    mountM(p, '<div class="xv"><div class="stack"><div class="spin">' +
-      [1, 2, 3, 4, 5].map(function (i) { return '<div class="plate p' + i + '"><i></i><span class="no">0' + i + '</span></div>'; }).join('') + '<div class="sig"></div></div></div></div>', function (box) {
-      var stack = $('.stack', box), spin = $('.spin', box), plates = $$('.plate', box), sig = $('.sig', box), st = { sep: 0, f: 0, sg: 0, zoom: 0 };
-      function render() {
-        var g = Math.min(60, box.clientHeight * 0.17), step = 4 + st.sep * (g - 4);
-        box.style.setProperty('--mps', Math.round(box.clientWidth * 0.45) + 'px');
-        plates.forEach(function (pl, i) { G.set(pl, { z: i * step }); });
-        G.set(stack, { y: st.f * step * 0.866, scale: 1 + 0.22 * st.zoom });
-        G.set(sig, { z: st.sg * step + 6, opacity: st.sep > 0.5 ? 1 : 0 });
-      }
-      G.set(stack, { rotationX: 0, scale: 0.9 }); render();
-      var tl = G.timeline({ defaults: { ease: 'power2.inOut' } }), M = [0];
-      tl.to(stack, { rotationX: 60, duration: 1.2 }).to(spin, { rotationZ: -45, duration: 1.2 }, '<')
-        .to(st, { sep: 1, duration: 1.3, onUpdate: render }, '<.3').to(st, { zoom: 1, duration: 1.2, onUpdate: render }, '<.2');
-      for (var k = 1; k < 5; k++) {
-        var t0 = tl.duration() + 0.55; M.push(t0);
-        tl.to(st, { f: k, sg: k, duration: 1.1, onUpdate: render }, t0);
-        if (k >= 2) tl.to(spin, { rotationZ: k === 2 ? -60 : k === 3 ? -30 : -45, duration: 1.4 }, t0 - 0.2);
-      }
-      tl.to({}, { duration: 1.2 });
-      return { tl: tl, M: M, T: tl.duration(), rv: render, onPhase: function (k) { plates.forEach(function (pl, i) { pl.classList.toggle('hot', i === k); pl.classList.toggle('dim', i !== k); }); } };
+  function mkMi(k, c, o) {
+    o.tl.pause();
+    var mi = { k: k, c: c, o: o, sc: MD / o.T, M: o.M, mv: [], hold: [], sub: 0, t: 0, vis: false, paused: false, stopAfter: false, fading: false, _tt: -1 };
+    for (var j = 0; j < 5; j++) { mi.mv.push(((j < 4 ? o.M[j + 1] : o.T) - o.M[j]) * mi.sc); mi.hold.push(j < 4 ? HOLD : HOLD5); }
+    mi.bs = $$('button', c.strip);
+    c.strip.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b || mi.fading) return;
+      /* E6: a animação vai até a sub-etapa, toca o movimento dela e fica parada ali (o botão vira "tocar") */
+      mi.sub = mi.bs.indexOf(b); mi.t = 0; mi._tt = -1; mi.stopAfter = true; setPaused(mi, false); showSub(mi); update(mi);
     });
+    c.pp.addEventListener('click', function () { mi.stopAfter = false; setPaused(mi, !mi.paused); });
+    MI[k] = mi; showSub(mi); update(mi);
+    if (o.rv) addEventListener('resize', o.rv);
+    return mi;
   }
-  function initMotor() {
-    if (DESK && G) {
-      var stage = $('.stage', motor), xv = $('.xv', motor), stack = $('.stack', motor), spin = $('.spin', motor), plates = $$('.plate', motor), sig = $('.sig', motor);
-      var svg = $('.leaders', motor), mw = $('.mwipe', motor), segs = $$('.mseg button', motor), machEls = $$('.mach', motor);
-      var MB = [null, MACH.so, MACH.mz, MACH.crm, MACH.fl];
-      var S = { sep: 0, lab: 0, sig: -1 };
-      var GAP = function () { return Math.min(92, stage.clientHeight * 0.16); };
-      var render = motorRender = function () {
-        var g = GAP();
-        plates.forEach(function (p, i) { G.set(p, { z: i * (4 + S.sep * (g - 4)) }); });
-        var zTop = 4 * (4 + S.sep * (g - 4));
-        G.set(stack, { y: zTop * 0.43 });
-        if (S.sig >= 0) G.set(sig, { z: S.sig * zTop + 6, opacity: 1 }); else G.set(sig, { opacity: 0 });
-        plates.forEach(function (p, i) { p.classList.toggle('hot', S.sig >= 0 && Math.abs(S.sig * 4 - i) < 0.55); });
-        var sr = stage.getBoundingClientRect(), lis = $$('li', sets[0]), d = '', dots = '';
-        plates.forEach(function (p, i) {
-          var li = lis[i]; if (!li) return;
-          var r = p.getBoundingClientRect(), x = r.right - sr.left - 2, y = r.top + r.height / 2 - sr.top;
-          var lx = sr.width - li.offsetWidth - 14; li.style.top = y + 'px';
-          var o = Math.max(0, Math.min(1, S.lab * 5 - i)); li.style.opacity = o;
-          li.classList.toggle('hot', p.classList.contains('hot'));
-          if (o > 0.01) { var m = x + (lx - x) * 0.35; d += 'M' + x + ' ' + y + ' L' + m + ' ' + y + ' L' + lx + ' ' + y; dots += '<circle cx="' + x + '" cy="' + y + '" r="3"/>'; }
-        });
-        svg.innerHTML = '<path d="' + d + '" style="opacity:' + Math.min(1, S.lab * 2) + '"/>' + dots;
-      };
-      projs.forEach(function (p, k) { G.set(p, { autoAlpha: k ? 0 : 1 }); });
-      G.set(machEls, { autoAlpha: 0 });
-      G.set(stack, { rotationX: 0, scale: 0.9 }); render();
-      var tl = G.timeline({ defaults: { ease: 'power2.inOut' } }), marks = [];
-      tl.to(stack, { rotationX: 60, scale: 1, duration: 1, onUpdate: render }).to(spin, { rotationZ: -45, duration: 1 }, '<');
-      projs.forEach(function (p, i) {
-        marks.push(i === 0 ? 0 : tl.duration());
-        if (i === 0) {
-          /* O Mercado para Gestores de Dados: a vista explodida em cinco placas */
-          tl.to(S, { sep: 1, duration: 1.1, onUpdate: render })
-            .to(S, { lab: 1, duration: 0.8, ease: 'none', onUpdate: render }, '<.3')
-            .to(S, { sig: 0, duration: 0.01, ease: 'none', onUpdate: render })
-            .to(S, { sig: 1, duration: 1.2, ease: 'none', onUpdate: render })
-            .to(S, { sig: -1, duration: 0.01, ease: 'none', onUpdate: render })
-            .to({}, { duration: 0.35 });
+  function restart(mi) { /* E3: depois da 05 a máquina esmaece e recomeça do 01 */
+    mi.fading = true; var el = mi.o.fade;
+    G.to(el, { opacity: 0, duration: 0.4, onComplete: function () {
+      mi.sub = 0; mi.t = 0; mi._tt = -1; mi.stopAfter = false; showSub(mi); update(mi);
+      G.to(el, { opacity: 1, duration: 0.4, onComplete: function () { mi.fading = false; } });
+    } });
+  }
+  function tick(now) {
+    var dt = Math.min(0.1, (now - LAST) / 1000); LAST = now;
+    MI.forEach(function (mi) {
+      if (!mi || !mi.vis || mi.paused || mi.fading) return;
+      mi.t += dt; var j = mi.sub;
+      if (mi.stopAfter && mi.t >= mi.mv[j]) { mi.t = mi.mv[j]; mi.stopAfter = false; setPaused(mi, true); }
+      else if (mi.t >= mi.mv[j] + mi.hold[j]) {
+        if (j < 4) { mi.sub = j + 1; mi.t = 0; showSub(mi); }
+        else { mi.t = mi.mv[j] + mi.hold[j]; restart(mi); }
+      }
+      update(mi);
+    });
+    requestAnimationFrame(tick);
+  }
+
+  /* ---- cada projeto vira um bloco; a máquina toca quando metade dela aparece ---- */
+  function layoutA() {
+    var machEls = $$('.mach', motor), xv = $('.xv', motor), MB = [null, MACH.so, MACH.mz, MACH.crm, MACH.fl];
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.target._mi) e.target._mi.vis = e.isIntersecting; }); }, { threshold: 0.5 });
+    projs.forEach(function (p, k) {
+      var c = mkCtl(p), ptx = D.createElement('div'), pbox = D.createElement('div'), rl = D.createElement('span'), o;
+      ptx.className = 'ptx'; pbox.className = 'pbox'; rl.className = 'rline'; rl.setAttribute('aria-hidden', 'true');
+      while (p.firstChild) ptx.appendChild(p.firstChild);
+      p.appendChild(ptx); p.appendChild(pbox); p.appendChild(rl);
+      if (WIDE) {
+        if (k) {
+          var mach = machEls[k - 1]; mach.classList.add('mw'); pbox.appendChild(mach);
+          var m = MB[k]($('svg', mach));
+          o = { tl: m.tl, M: m.M, T: m.tl.duration(), onPhase: m.onPhase, cap: function (j) { capWide(p, mach, j); }, fade: mach, el: mach };
         } else {
-          /* os outros quatro: a máquina da amostra aprovada, com a linha do tempo dela encaixada na da seção */
-          var me = machEls[i - 1], m = MB[i]($('svg', me)), t0 = tl.duration(), sc = MD / m.tl.duration();
-          tl.add(m.tl.duration(MD), t0);
-          motorMP.push({ k: i, el: me, strip: $('.pstrip', p), t0: t0, end: t0 + MD, ph: m.M.map(function (x) { return t0 + x * sc; }), on: m.onPhase, cur: -1 });
+          var mx = D.createElement('div'), xb = D.createElement('div'); mx.className = 'mach mw mx'; xb.className = 'xbox';
+          xb.appendChild(xv); mx.appendChild(xb); pbox.appendChild(mx);
+          o = mercadoW(xb); o.fade = mx; o.el = mx;
         }
-        if (i < projs.length - 1) {
-          var q = projs[i + 1], L = 'sw' + i, qm = machEls[i], cm = i ? machEls[i - 1] : null;
-          if (i === 0) {
-            tl.to(S, { lab: 0, duration: 0.35, ease: 'none', onUpdate: render })
-              .to(S, { sep: 0.08, duration: 0.75, onUpdate: render }, '<.05')
-              .to(spin, { rotationZ: '-=90', duration: 0.75, onUpdate: render }, '<');
-          }
-          /* a linha vermelha passa pelo texto, o projeto novo entra por trás dela e a máquina nova entra junto */
-          tl.addLabel(L)
-            .set(q, { autoAlpha: 1 }, L).set(mw, { autoAlpha: 1 }, L).set(qm, { autoAlpha: 1 }, L)
-            .fromTo(q, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, immediateRender: false }, L)
-            .fromTo(p, { clipPath: 'inset(0% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 100%)', duration: 0.8, immediateRender: false }, L)
-            .fromTo(qm, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, immediateRender: false }, L)
-            .fromTo(mw, { left: '0%' }, { left: '100%', duration: 0.8, immediateRender: false }, L);
-          if (cm) tl.fromTo(cm, { clipPath: 'inset(0% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 100%)', duration: 0.8, immediateRender: false }, L).set(cm, { autoAlpha: 0 }, L + '+=0.8');
-          else tl.to(xv, { autoAlpha: 0, duration: 0.8 }, L);
-          tl.set(mw, { autoAlpha: 0 }, L + '+=0.8').set(p, { autoAlpha: 0 }, L + '+=0.8');
-        }
-      });
-      marks.push(tl.duration());
-      motorST = ST.create({
-        animation: tl, trigger: $('.pin', motor), start: 'top top', pin: true, scrub: 0.6, anticipatePin: 1,
-        end: function () { return '+=' + Math.round(innerHeight * tl.duration() / 3); },
-        onUpdate: function (s) {
-          var t = s.progress * tl.duration();
-          segs.forEach(function (b, k) {
-            var a = marks[k], z = marks[k + 1], pp = Math.max(0, Math.min(1, (t - a) / (z - a)));
-            b.style.setProperty('--p', pp.toFixed(3));
-            b.classList.toggle('on', (t >= a && t < z) || (k === segs.length - 1 && t >= z));
-          });
-          motorMP.forEach(function (mp) {
-            var k = 0; for (var j = 0; j < 5; j++) if (t >= mp.ph[j] - 1e-3) k = j;
-            if (mp.cur !== k) { mp.cur = k; capSet(mp, k); if (mp.on) mp.on(k); }
-            $$('button', mp.strip).forEach(function (b, j) {
-              var a = mp.ph[j], z = j < 4 ? mp.ph[j + 1] : mp.end;
-              b.style.setProperty('--p', Math.max(0, Math.min(1, (t - a) / (z - a))).toFixed(3));
-              b.classList.toggle('on', j === k);
-            });
-          });
-        }
-      });
-      motorPlace = function (k) { return motorST.start + (motorST.end - motorST.start) * ((marks[k] + (k ? 0.1 : 0)) / tl.duration()) + 2; };
-      segs.forEach(function (b, k) {
-        b.addEventListener('click', function () {
-          var y = motorST.start + (motorST.end - motorST.start) * ((marks[k] + (k ? 0.1 : 0)) / tl.duration());
-          scrollTo({ top: y + 2, behavior: 'smooth' });
-        });
-      });
-      motorMP.forEach(function (mp) {
-        mp.strip.addEventListener('click', function (e) {
-          var b = e.target.closest('button'); if (!b) return;
-          var j = $$('button', mp.strip).indexOf(b);
-          var y = motorST.start + (motorST.end - motorST.start) * ((mp.ph[j] + 0.05) / tl.duration());
-          scrollTo({ top: y + 2, behavior: 'smooth' });
-        });
-      });
-      addEventListener('resize', render);
-    } else if (G && !RM) {
-      /* celular e telas estreitas: os cinco projetos ganham a seção parada com pin enquanto se rola: os quatro com máquina plana e câmera por etapa,
-         o Mercado com a vista explodida em 3D (a pilha é a câmera); legenda grande e tira de peças embaixo (amostras aprovadas em planos/2026-11-13-portfolio/direcoes/) */
-      H.classList.add('js-mach');
-      var KEYS = [null, 'so', 'mz', 'crm', 'fl'], MBM = [null, MACH.so, MACH.mz, MACH.crm, MACH.fl];
-      projs.forEach(function (p, k) {
-        if (k) initMachM(p, KEYS[k], MBM[k]); else initMercadoM(p);
-      });
-    }
+      } else {
+        /* no celular a linha executiva vai pra dentro da legenda suspensa, e a tira com o pausar/tocar fica logo embaixo da caixa */
+        o = squareO(k, p, pbox); o.lgd.appendChild(c.desc); pbox.appendChild(c.pctl);
+      }
+      var mi = mkMi(k, c, o); o.el._mi = mi; io.observe(o.el);
+      /* E13: a linha vermelha varre o bloco uma vez, quando ele entra */
+      G.set(p, { clipPath: 'inset(0% 100% 0% 0%)' });
+      ST.create({ trigger: p, start: 'top 78%', once: true, onEnter: function () {
+        G.fromTo(p, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.9, ease: 'power2.inOut', clearProps: 'clipPath' });
+        G.fromTo(rl, { left: '0%', autoAlpha: 1 }, { left: '100%', duration: 0.9, ease: 'power2.inOut', onComplete: function () { G.set(rl, { autoAlpha: 0 }); } });
+      } });
+    });
+  }
+
+  function initMotor() {
+    if (!G) return;
+    if (RM) return; /* E9: sem JavaScript e com movimento reduzido, a lista de peças já traz a linha executiva embaixo de cada uma */
+    H.classList.remove('js-desk');
+    H.classList.toggle('js-mach', !WIDE);
+    H.classList.add('pa'); H.classList.add(WIDE ? 'pw' : 'pn');
+    layoutA();
+    requestAnimationFrame(function (n) { LAST = n; tick(n); });
+    addEventListener('resize', function () { if ((innerWidth >= 861) !== WIDE) location.reload(); });
+    window.__p = { MI: MI };
   }
 
   /* ---------------- 03 · esqueleto ---------------- */

@@ -84,11 +84,11 @@
 <p class="acts"><a href="https://mercado.fernandocarliniguimaraes.com/" rel="noopener"><span data-i18n="s1a">Abrir o estudo</span> ↗</a><a href="https://github.com/nandodsg/mercado-gestao-dados-br" rel="noopener"><span data-i18n="cod">Código</span> ↗</a></p>
 <p class="pecas-t" data-i18n="pt">As peças</p>
 <ol class="path pecas">
-<li><b data-i18n="c11a">App de acompanhamento de vagas</b><span data-i18n="c11b">onde o dado nasce</span></li>
-<li><b data-i18n="c12a">Contrato de dados e sigilo</b><span data-i18n="c12b">conferidos antes de cada publicação</span></li>
-<li><b data-i18n="c13a">dbt sobre DuckDB</b><span data-i18n="c13b">testes e CI sem credencial de banco</span></li>
-<li><b data-i18n="c14a">LLM medido contra referência</b><span data-i18n="c14b">classifica cada linha dos anúncios</span></li>
-<li><b data-i18n="c15a">Página com o SQL ao lado</b><span data-i18n="c15b">cada número com a consulta que o gera</span></li>
+<li><b data-i18n="c11a">App de acompanhamento de vagas</b><span data-i18n="c11b">onde o dado nasce</span><i class="pe" data-i18n="e11">O dado nasce de um app de acompanhamento de vagas que eu construí: cada vaga lida vira um registro.</i></li>
+<li><b data-i18n="c12a">Contrato de dados e sigilo</b><span data-i18n="c12b">conferidos antes de cada publicação</span><i class="pe" data-i18n="e12">Uma lista fechada decide o que sai do banco privado. Nota, avaliação e o que me identifica nunca saem.</i></li>
+<li><b data-i18n="c13a">dbt sobre DuckDB</b><span data-i18n="c13b">testes e CI sem credencial de banco</span><i class="pe" data-i18n="e13">Toda semana o pipeline refaz tudo do zero e confere contrato e sigilo antes de qualquer publicação.</i></li>
+<li><b data-i18n="c14a">LLM medido contra referência</b><span data-i18n="c14b">classifica cada linha dos anúncios</span><i class="pe" data-i18n="e14">Escolhi o modelo que classifica os anúncios pelo desempenho contra uma referência que eu revisei, não pelo preço.</i></li>
+<li><b data-i18n="c15a">Página com o SQL ao lado</b><span data-i18n="c15b">cada número com a consulta que o gera</span><i class="pe" data-i18n="e15">Nenhum número é digitado à mão: cada gráfico mostra a consulta que o gera, e qualquer pessoa pode rodar de novo.</i></li>
 </ol>
 </article>
 <article class="proj">
@@ -100,11 +100,11 @@
 <div aria-label="Peças da máquina" class="pstrip" data-i18n-aria="stripa" role="group"></div>
 <p class="pecas-t" data-i18n="pt">As peças</p>
 <ol class="path pecas">
-<li><b>BigQuery</b><span data-i18n="c21b">o dataset público do Stack Overflow</span></li>
-<li><b data-i18n="c22a">dbt, modelos e testes</b><span data-i18n="c22b">specs e critérios de aceite antes do SQL</span></li>
-<li><b>MetricFlow</b><span data-i18n="c23b">camada semântica</span></li>
-<li><b>Vercel AI Gateway</b><span data-i18n="c24b">chamadas com orçamento por execução</span></li>
-<li><b data-i18n="c25a">LLM + gold set</b><span data-i18n="c25b">rotulagem medida por concordância</span></li>
+<li><b>BigQuery</b><span data-i18n="c21b">o dataset público do Stack Overflow</span><i class="pe" data-i18n="e21">Uma pergunta de negócio sobre um dado público e grande: o que faz uma pergunta no Stack Overflow ganhar resposta.</i></li>
+<li><b data-i18n="c22a">dbt, modelos e testes</b><span data-i18n="c22b">specs e critérios de aceite antes do SQL</span><i class="pe" data-i18n="e22">Antes de qualquer SQL, cada definição ganhou um critério de aceite, e cada critério virou um teste automático.</i></li>
+<li><b>MetricFlow</b><span data-i18n="c23b">camada semântica</span><i class="pe" data-i18n="e23">Cada métrica é definida num lugar só, e um script confere que o relatório bate com os modelos.</i></li>
+<li><b>Vercel AI Gateway</b><span data-i18n="c24b">chamadas com orçamento por execução</span><i class="pe" data-i18n="e24">Toda execução paga tem o custo estimado antes e um teto que ela não pode passar.</i></li>
+<li><b data-i18n="c25a">LLM + gold set</b><span data-i18n="c25b">rotulagem medida por concordância</span><i class="pe" data-i18n="e25">Escolhi o modelo como se escolhe fornecedor: num teste que ele não escreveu, contra rótulos revisados por mim.</i></li>
 </ol>
 </article>
 <article class="proj">
@@ -115,11 +115,11 @@
 <div aria-label="Peças da máquina" class="pstrip" data-i18n-aria="stripa" role="group"></div>
 <p class="pecas-t" data-i18n="pt3">As peças do método</p>
 <ol class="path pecas">
-<li><b data-i18n="z1a">Contexto do time</b><span data-i18n="z1b">o ponto de partida de cada matriz</span></li>
-<li><b data-i18n="z2a">Competências e níveis</b><span data-i18n="z2b">degraus no modelo Dreyfus</span></li>
-<li><b data-i18n="z3a">Avaliação e devolutiva</b><span data-i18n="z3b">a conversa em cima do critério</span></li>
-<li><b data-i18n="z4a">Mérito e promoção</b><span data-i18n="z4b">decididos com o mesmo critério</span></li>
-<li><b data-i18n="z5a">PDI</b><span data-i18n="z5b">o próximo passo de cada pessoa</span></li>
+<li><b data-i18n="z1a">Contexto do time</b><span data-i18n="z1b">o ponto de partida de cada matriz</span><i class="pe" data-i18n="e31">Cada matriz começa pelo que aquele time precisa entregar, não por uma lista pronta de competências.</i></li>
+<li><b data-i18n="z2a">Competências e níveis</b><span data-i18n="z2b">degraus no modelo Dreyfus</span><i class="pe" data-i18n="e32">Cada competência ganha degraus descritos em comportamento observável, do iniciante ao especialista.</i></li>
+<li><b data-i18n="z3a">Avaliação e devolutiva</b><span data-i18n="z3b">a conversa em cima do critério</span><i class="pe" data-i18n="e33">A autoavaliação e a do líder se encontram na devolutiva, e a conversa parte do critério, não da impressão.</i></li>
+<li><b data-i18n="z4a">Mérito e promoção</b><span data-i18n="z4b">decididos com o mesmo critério</span><i class="pe" data-i18n="e34">Mérito e promoção usam a mesma régua da devolutiva: cada pessoa sabe o que falta pro próximo nível.</i></li>
+<li><b data-i18n="z5a">PDI</b><span data-i18n="z5b">o próximo passo de cada pessoa</span><i class="pe" data-i18n="e35">O plano de desenvolvimento sai da distância entre o nível de hoje e o próximo, com um passo concreto por pessoa.</i></li>
 </ol>
 </article>
 <article class="proj">
@@ -131,11 +131,11 @@
 <div aria-label="Peças da máquina" class="pstrip" data-i18n-aria="stripa" role="group"></div>
 <p class="pecas-t" data-i18n="pt">As peças</p>
 <ol class="path pecas">
-<li><b data-i18n="c41a">Ingestão e normalização</b><span data-i18n="c41b">dos sistemas de venda dos dois negócios</span></li>
-<li><b data-i18n="c42a">Deduplicação fuzzy</b><span data-i18n="c42b">dos cadastros de clientes</span></li>
-<li><b data-i18n="c44a">Caixa de entrada + funil</b><span data-i18n="c44b">campanhas em produção, usadas pelo negócio</span></li>
-<li><b data-i18n="c45a">Teste A/B/C</b><span data-i18n="c45b">com guardas de envio</span></li>
-<li><b>WhatsApp Cloud API</b><span data-i18n="c43b">webhook com verificação de assinatura</span></li>
+<li><b data-i18n="c41a">Ingestão e normalização</b><span data-i18n="c41b">dos sistemas de venda dos dois negócios</span><i class="pe" data-i18n="e41">Os dois negócios vendiam em sistemas diferentes. O primeiro passo foi juntar tudo numa base só de clientes.</i></li>
+<li><b data-i18n="c42a">Deduplicação fuzzy</b><span data-i18n="c42b">dos cadastros de clientes</span><i class="pe" data-i18n="e42">O mesmo cliente aparecia escrito de jeitos diferentes. Juntar os repetidos mostrou a base real de clientes.</i></li>
+<li><b data-i18n="c44a">Caixa de entrada + funil</b><span data-i18n="c44b">campanhas em produção, usadas pelo negócio</span><i class="pe" data-i18n="e43">A equipe atende cada conversa e acompanha o funil pelo celular. Está em uso pelo negócio.</i></li>
+<li><b data-i18n="c45a">Teste A/B/C</b><span data-i18n="c45b">com guardas de envio</span><i class="pe" data-i18n="e44">Os donos queriam saber qual oferta funciona melhor: a campanha virou teste, com trava contra mensagem repetida.</i></li>
+<li><b>WhatsApp Cloud API</b><span data-i18n="c43b">webhook com verificação de assinatura</span><i class="pe" data-i18n="e45">Integração com a API oficial do WhatsApp, que só aceita evento com a assinatura da Meta conferida.</i></li>
 </ol>
 </article>
 <article class="proj proj-case">
@@ -148,11 +148,11 @@
 <div aria-label="Peças da máquina" class="pstrip" data-i18n-aria="stripa" role="group"></div>
 <p class="pecas-t" data-i18n="pt">As peças</p>
 <ol class="path pecas">
-<li><b data-i18n="c51a">PIX com geolocalização</b><span data-i18n="c51b">presença como comportamento, não como cadastro</span></li>
-<li><b data-i18n="c52a">Um DBSCAN por pessoa</b><span data-i18n="c52b">um ou vários lugares, sem número fixo</span></li>
-<li><b data-i18n="c53a">Centros de gravidade</b><span data-i18n="c53b">os lugares que pesam na vida de cada um</span></li>
-<li><b data-i18n="c54a">Mancha da inundação</b><span data-i18n="c54b">cruzada com os polígonos da UFRGS</span></li>
-<li><b data-i18n="c55a">Do mapa à ação</b><span data-i18n="c55b">acesso ao app, crédito e reconstrução priorizados</span></li>
+<li><b data-i18n="c51a">PIX com geolocalização</b><span data-i18n="c51b">presença como comportamento, não como cadastro</span><i class="pe" data-i18n="e51">O dado já existia: cada PIX carrega onde a pessoa estava, sem formulário nem pesquisa.</i></li>
+<li><b data-i18n="c52a">Um DBSCAN por pessoa</b><span data-i18n="c52b">um ou vários lugares, sem número fixo</span><i class="pe" data-i18n="e52">Cada pessoa ganha o seu modelo, que acha quantos lugares importam pra ela sem chutar um número.</i></li>
+<li><b data-i18n="c53a">Centros de gravidade</b><span data-i18n="c53b">os lugares que pesam na vida de cada um</span><i class="pe" data-i18n="e53">Cada lugar ganha um peso, pra separar a casa e o trabalho de uma visita de passagem.</i></li>
+<li><b data-i18n="c54a">Mancha da inundação</b><span data-i18n="c54b">cruzada com os polígonos da UFRGS</span><i class="pe" data-i18n="e54">Os lugares de cada um, cruzados com a mancha oficial: aparece quem foi atingido mesmo com o endereço fora.</i></li>
+<li><b data-i18n="c55a">Do mapa à ação</b><span data-i18n="c55b">acesso ao app, crédito e reconstrução priorizados</span><i class="pe" data-i18n="e55">Do mapa pra decisão: acesso ao app, crédito e reconstrução priorizados, em menos de uma semana.</i></li>
 </ol>
 </article>
 <span aria-hidden="true" class="mwipe"></span>
